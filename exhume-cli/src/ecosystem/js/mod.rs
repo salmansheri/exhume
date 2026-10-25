@@ -43,7 +43,7 @@ impl Ecosystem for JsEcosystem {
     }
 
     fn skipped_dirs(&self) -> &'static [&'static str] {
-        &["node_modules", ".git"]
+        &["node_modules"]
     }
 
     fn is_source_file(&self, path: &Path) -> bool {

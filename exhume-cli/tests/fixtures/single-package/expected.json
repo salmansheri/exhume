@@ -1,6 +1,6 @@
 [
-  { "kind": "unused-file", "package": "single-package", "path": "src/Widget.tsx", "confidence": "high" },
-  { "kind": "unused-file", "package": "single-package", "path": "src/dead-helper.ts", "confidence": "high" },
-  { "kind": "unused-file", "package": "single-package", "path": "src/dead.ts", "confidence": "high" },
-  { "kind": "unused-file", "package": "single-package", "path": "src/legacy.cjs", "confidence": "high" }
+  {"kind": "unused-file", "package": "single-package", "path": "src/Widget.tsx", "name": "src/Widget.tsx", "line": 1, "column": 1, "confidence": "high", "reasons": []},
+  {"kind": "unused-file", "package": "single-package", "path": "src/dead-helper.ts", "name": "src/dead-helper.ts", "line": 1, "column": 1, "confidence": "high", "reasons": []},
+  {"kind": "unused-file", "package": "single-package", "path": "src/dead.ts", "name": "src/dead.ts", "line": 1, "column": 1, "confidence": "high", "reasons": []},
+  {"kind": "unused-file", "package": "single-package", "path": "src/legacy.cjs", "name": "src/legacy.cjs", "line": 1, "column": 1, "confidence": "high", "reasons": []}
 ]

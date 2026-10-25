@@ -290,6 +290,7 @@ dependencies = [
  "oxc_span",
  "serde",
  "serde_json",
+ "tempfile",
 ]
 
 [[package]]

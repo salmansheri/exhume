@@ -56,14 +56,22 @@ fn scan_package(
     })
 }
 
-/// Every source file in `dir`, honouring ignore files whether or not the workspace is a git repo.
+/// Directories that are never walked, whatever the ecosystem.
+const VCS_DIRS: &[&str] = &[".git", ".hg", ".svn"];
+
+/// Every source file in `dir`, honouring the workspace's own ignore files (not those of enclosing
+/// directories) whether or not the workspace is a git repo.
 fn source_files(ecosystem: &dyn Ecosystem, dir: &Path) -> BTreeSet<PathBuf> {
     let skipped = ecosystem.skipped_dirs();
     ignore::WalkBuilder::new(dir)
         .require_git(false)
+        .parents(false)
         .filter_entry(move |entry| {
             !(entry.file_type().is_some_and(|t| t.is_dir())
-                && skipped.iter().any(|s| entry.file_name() == *s))
+                && VCS_DIRS
+                    .iter()
+                    .chain(skipped)
+                    .any(|s| entry.file_name() == *s))
         })
         .build()
         .filter_map(Result::ok)

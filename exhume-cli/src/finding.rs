@@ -1,7 +1,19 @@
 use serde::Serialize;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
-#[serde(rename_all = "kebab-case")]
+/// Serializes an enum as its `as_str` name, so that name has a single source of truth.
+macro_rules! serialize_as_str {
+    ($($ty:ty),*) => {$(
+        impl Serialize for $ty {
+            fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+                serializer.serialize_str(self.as_str())
+            }
+        }
+    )*};
+}
+
+serialize_as_str!(FindingKind, Confidence);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum FindingKind {
     UnusedFile,
 }
@@ -20,8 +32,7 @@ impl FindingKind {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
-#[serde(rename_all = "lowercase")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Confidence {
     Low,
     Medium,
