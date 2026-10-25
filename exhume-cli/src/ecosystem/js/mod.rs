@@ -16,7 +16,8 @@ const SKIPPED_DIRS: &[&str] = &["node_modules"];
 
 pub struct JsEcosystem {
     packages: Vec<WorkspacePackage>,
-    manifests: Vec<Manifest>,
+    /// Manifests by Workspace Package directory.
+    manifests: HashMap<PathBuf, Manifest>,
     /// Workspace Package directories by package name, for imports between packages.
     by_name: HashMap<String, PathBuf>,
     resolver: resolve::Resolver,
@@ -25,17 +26,12 @@ pub struct JsEcosystem {
 impl JsEcosystem {
     pub fn load(root: &Path) -> anyhow::Result<Self> {
         let mut packages = Vec::new();
-        let mut manifests = Vec::new();
+        let mut manifests = HashMap::new();
         let mut by_name = HashMap::new();
-        for (dir, manifest) in workspace::discover(root)? {
-            let name = manifest.name.clone().unwrap_or_else(|| {
-                dir.file_name()
-                    .map(|n| n.to_string_lossy().into_owned())
-                    .unwrap_or_default()
-            });
-            by_name.insert(name.clone(), dir.clone());
-            packages.push(WorkspacePackage { name, dir });
-            manifests.push(manifest);
+        for (package, manifest) in workspace::discover(root)? {
+            by_name.insert(package.name.clone(), package.dir.clone());
+            manifests.insert(package.dir.clone(), manifest);
+            packages.push(package);
         }
         Ok(JsEcosystem {
             packages,
@@ -50,11 +46,14 @@ impl JsEcosystem {
     fn resolve_workspace_package(&self, specifier: &str) -> Option<PathBuf> {
         let (name, subpath) = split_package_specifier(specifier);
         let dir = self.by_name.get(name)?;
-        // Self-reference honours the package's `exports`; the relative form falls back to
-        // `main` or an index file.
-        self.resolver
-            .resolve_in(dir, specifier)
-            .or_else(|| self.resolver.resolve_in(dir, &format!(".{subpath}")))
+        // Self-reference honours the package's `exports`. Only a package without `exports`
+        // lets importers reach any file, through `main`, an index file or a relative subpath.
+        self.resolver.resolve_from_dir(dir, specifier).or_else(|| {
+            let restricted = self.manifests.get(dir).is_some_and(Manifest::has_exports);
+            (!restricted)
+                .then(|| self.resolver.resolve_from_dir(dir, &format!(".{subpath}")))
+                .flatten()
+        })
     }
 }
 
@@ -85,12 +84,11 @@ impl Ecosystem for JsEcosystem {
     }
 
     fn entry_points(&self, package: &WorkspacePackage) -> anyhow::Result<Vec<PathBuf>> {
-        let index = self
-            .packages
-            .iter()
-            .position(|p| p.dir == package.dir)
+        let manifest = self
+            .manifests
+            .get(&package.dir)
             .context("package is not part of this workspace")?;
-        Ok(self.manifests[index]
+        Ok(manifest
             .entry_paths()
             .into_iter()
             .filter_map(|relative| package.dir.join(relative).canonicalize().ok())
@@ -106,12 +104,13 @@ impl Ecosystem for JsEcosystem {
 
     fn resolve(&self, from: &Path, specifier: &str) -> Option<PathBuf> {
         self.resolver
-            .resolve_from(from, specifier)
+            .resolve_from_file(from, specifier)
             .or_else(|| self.resolve_workspace_package(specifier))
     }
 }
 
 /// Splits `@scope/pkg/sub/path` into (`@scope/pkg`, `/sub/path`) and `pkg/sub` into (`pkg`, `/sub`).
+/// The subpath keeps its leading `/` (or is empty), so `.{subpath}` is a relative specifier.
 fn split_package_specifier(specifier: &str) -> (&str, &str) {
     let name_segments = if specifier.starts_with('@') { 2 } else { 1 };
     let end = specifier

@@ -126,7 +126,7 @@ fn workspaces_field_in_object_form_discovers_every_package() {
 fn yarn_plug_n_play_workspaces_are_rejected() {
     let error = exhume::scan(&fixture("yarn-pnp"), &Options::default()).unwrap_err();
     assert!(
-        format!("{error:#}").contains("Yarn Plug'n'Play is not supported"),
+        format!("{error:#}").contains("Yarn Plug'n'Play (PnP) is not supported"),
         "{error:#}"
     );
 }
@@ -140,4 +140,54 @@ fn yarn_plug_n_play_is_rejected_from_yarnrc_before_install() {
     let error = exhume::scan(dir.path(), &Options::default()).unwrap_err();
 
     assert!(format!("{error:#}").contains("Plug'n'Play"), "{error:#}");
+}
+
+#[test]
+fn a_pnpm_workspace_file_without_packages_falls_back_to_the_workspaces_field() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(
+        dir.path().join("pnpm-workspace.yaml"),
+        "catalog:\n  react: ^19\n",
+    )
+    .unwrap();
+    std::fs::write(
+        dir.path().join("package.json"),
+        r#"{ "name": "root", "workspaces": ["pkgs/*"] }"#,
+    )
+    .unwrap();
+    std::fs::create_dir_all(dir.path().join("pkgs/one")).unwrap();
+    std::fs::write(
+        dir.path().join("pkgs/one/package.json"),
+        r#"{ "name": "one" }"#,
+    )
+    .unwrap();
+
+    let report = scan(dir.path());
+
+    assert_eq!(package_names(&report), ["root", "one"]);
+}
+
+#[test]
+fn two_workspace_packages_with_the_same_name_are_rejected() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(
+        dir.path().join("package.json"),
+        r#"{ "name": "root", "workspaces": ["a", "b"] }"#,
+    )
+    .unwrap();
+    for member in ["a", "b"] {
+        std::fs::create_dir_all(dir.path().join(member)).unwrap();
+        std::fs::write(
+            dir.path().join(member).join("package.json"),
+            r#"{ "name": "dup" }"#,
+        )
+        .unwrap();
+    }
+
+    let error = exhume::scan(dir.path(), &Options::default()).unwrap_err();
+
+    assert!(
+        format!("{error:#}").contains("two Workspace Packages are named \"dup\""),
+        "{error:#}"
+    );
 }

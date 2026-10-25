@@ -1,6 +1,7 @@
 //! Discovers the Workspace Packages of a JS workspace from `pnpm-workspace.yaml` or the
 //! root manifest's `workspaces` field.
 
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, bail};
@@ -8,15 +9,37 @@ use globset::{GlobBuilder, GlobSet, GlobSetBuilder};
 use serde::Deserialize;
 
 use super::manifest::Manifest;
+use crate::ecosystem::WorkspacePackage;
 
 #[derive(Deserialize)]
 struct PnpmWorkspace {
-    #[serde(default)]
-    packages: Vec<String>,
+    packages: Option<Vec<String>>,
 }
 
-/// Directories of every Workspace Package, the root first, each paired with its manifest.
-pub fn discover(root: &Path) -> anyhow::Result<Vec<(PathBuf, Manifest)>> {
+/// Every Workspace Package, the root first, each paired with its manifest.
+pub fn discover(root: &Path) -> anyhow::Result<Vec<(WorkspacePackage, Manifest)>> {
+    let mut packages = Vec::new();
+    let mut dirs_by_name: HashMap<String, PathBuf> = HashMap::new();
+    for (dir, manifest) in member_dirs(root)? {
+        let name = manifest.name.clone().unwrap_or_else(|| {
+            dir.file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default()
+        });
+        // Imports name packages, so a duplicate name would make resolution ambiguous.
+        if let Some(first) = dirs_by_name.insert(name.clone(), dir.clone()) {
+            bail!(
+                "two Workspace Packages are named {name:?}: {} and {}",
+                first.display(),
+                dir.display()
+            );
+        }
+        packages.push((WorkspacePackage { name, dir }, manifest));
+    }
+    Ok(packages)
+}
+
+fn member_dirs(root: &Path) -> anyhow::Result<Vec<(PathBuf, Manifest)>> {
     reject_plug_n_play(root)?;
     let root_manifest = Manifest::read_optional(root)?;
     let patterns = match pnpm_patterns(root)? {
@@ -67,7 +90,7 @@ fn pnpm_patterns(root: &Path) -> anyhow::Result<Option<Vec<String>>> {
     };
     let workspace: PnpmWorkspace =
         serde_saphyr::from_str(&raw).with_context(|| format!("invalid {}", path.display()))?;
-    Ok(Some(workspace.packages))
+    Ok(workspace.packages)
 }
 
 /// Splits workspace patterns into included and `!`-negated globs.
@@ -103,7 +126,7 @@ fn reject_plug_n_play(root: &Path) -> anyhow::Result<()> {
     });
     if has_pnp_runtime || configured {
         bail!(
-            "Yarn Plug'n'Play is not supported; set `nodeLinker: node-modules` in .yarnrc.yml \
+            "Yarn Plug'n'Play (PnP) is not supported; set `nodeLinker: node-modules` in .yarnrc.yml \
              and reinstall"
         );
     }

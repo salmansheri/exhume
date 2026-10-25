@@ -44,6 +44,11 @@ impl Manifest {
             .with_context(|| format!("invalid {}", path.display()))
     }
 
+    /// Whether `exports` restricts which subpaths other packages may import.
+    pub fn has_exports(&self) -> bool {
+        self.exports.is_some()
+    }
+
     pub fn workspace_patterns(&self) -> Vec<String> {
         match &self.workspaces {
             Some(Workspaces::Patterns(patterns) | Workspaces::Config { packages: patterns }) => {

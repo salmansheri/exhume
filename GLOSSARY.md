@@ -13,7 +13,7 @@ The whole monorepo being scanned, made up of one or more workspace packages. A r
 _Avoid_: Project, repo (when you mean the scanned unit)
 
 **Workspace Package**:
-A directory inside the workspace that has its own manifest and is listed by the workspace configuration.
+A directory that has its own manifest and is either the workspace root or listed by the workspace configuration. Each one has a unique name.
 _Avoid_: Module, project, sub-repo
 
 **Dependency**:

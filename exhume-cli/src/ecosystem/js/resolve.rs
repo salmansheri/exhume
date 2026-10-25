@@ -38,7 +38,7 @@ impl Resolver {
     }
 
     /// Resolves `specifier` as imported by `file`, applying that file's tsconfig `paths`.
-    pub fn resolve_from(&self, file: &Path, specifier: &str) -> Option<PathBuf> {
+    pub fn resolve_from_file(&self, file: &Path, specifier: &str) -> Option<PathBuf> {
         self.inner
             .resolve_file(file, specifier)
             .ok()
@@ -46,7 +46,7 @@ impl Resolver {
     }
 
     /// Resolves `specifier` as if it were imported by a file in `dir`, without tsconfig `paths`.
-    pub fn resolve_in(&self, dir: &Path, specifier: &str) -> Option<PathBuf> {
+    pub fn resolve_from_dir(&self, dir: &Path, specifier: &str) -> Option<PathBuf> {
         self.inner
             .resolve(dir, specifier)
             .ok()
