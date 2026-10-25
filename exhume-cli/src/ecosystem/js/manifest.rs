@@ -13,14 +13,44 @@ pub struct Manifest {
     typings: Option<String>,
     bin: Option<Value>,
     exports: Option<Value>,
+    workspaces: Option<Workspaces>,
+}
+
+/// The `workspaces` field: an array of patterns (npm, bun) or an object with `packages` (yarn).
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+enum Workspaces {
+    Patterns(Vec<String>),
+    Config {
+        #[serde(default)]
+        packages: Vec<String>,
+    },
 }
 
 impl Manifest {
     pub fn read(dir: &Path) -> anyhow::Result<Manifest> {
         let path = dir.join("package.json");
-        let raw = std::fs::read_to_string(&path)
-            .with_context(|| format!("no package.json found at {}", path.display()))?;
-        serde_json::from_str(&raw).with_context(|| format!("invalid {}", path.display()))
+        Self::read_optional(dir)?
+            .with_context(|| format!("no package.json found at {}", path.display()))
+    }
+
+    pub fn read_optional(dir: &Path) -> anyhow::Result<Option<Manifest>> {
+        let path = dir.join("package.json");
+        let Ok(raw) = std::fs::read_to_string(&path) else {
+            return Ok(None);
+        };
+        serde_json::from_str(&raw)
+            .map(Some)
+            .with_context(|| format!("invalid {}", path.display()))
+    }
+
+    pub fn workspace_patterns(&self) -> Vec<String> {
+        match &self.workspaces {
+            Some(Workspaces::Patterns(patterns) | Workspaces::Config { packages: patterns }) => {
+                patterns.clone()
+            }
+            None => Vec::new(),
+        }
     }
 
     /// Paths of the plain manifest Entry Points, relative to the package directory.

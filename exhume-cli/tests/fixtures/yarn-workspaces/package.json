@@ -1,0 +1,1 @@
+{ "name": "yarn-workspaces", "private": true, "workspaces": { "packages": ["libs/*"], "nohoist": [] } }

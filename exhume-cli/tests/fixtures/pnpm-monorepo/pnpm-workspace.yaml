@@ -1,0 +1,7 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "!packages/excluded"
+
+catalog:
+  react: ^19.0.0

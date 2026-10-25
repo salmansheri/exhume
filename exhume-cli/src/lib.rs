@@ -1,6 +1,7 @@
 pub mod ecosystem;
 pub mod finding;
 pub mod report;
+mod walk;
 
 use std::collections::{BTreeSet, HashSet};
 use std::path::{Path, PathBuf};
@@ -19,69 +20,53 @@ pub fn scan(root: &Path, _options: &Options) -> anyhow::Result<Report> {
     let root = root
         .canonicalize()
         .with_context(|| format!("cannot read workspace at {}", root.display()))?;
-    let ecosystem = JsEcosystem::new();
-    let packages = ecosystem
-        .packages(&root)?
-        .iter()
-        .map(|package| scan_package(&ecosystem, &root, package))
-        .collect::<anyhow::Result<_>>()?;
-    Ok(Report::new(packages))
-}
+    let ecosystem = JsEcosystem::load(&root)?;
+    let packages = ecosystem.packages();
 
-fn scan_package(
-    ecosystem: &dyn Ecosystem,
-    root: &Path,
-    package: &WorkspacePackage,
-) -> anyhow::Result<PackageReport> {
-    let sources = source_files(ecosystem, &package.dir);
-    let reachable = reachable_files(ecosystem, ecosystem.entry_points(package)?, &sources)?;
-    let findings = sources
+    let sources: BTreeSet<PathBuf> = walk::files(&root, ecosystem.skipped_dirs())
+        .filter(|path| ecosystem.is_source_file(path))
+        .collect();
+    let mut entry_points = Vec::new();
+    for package in packages {
+        entry_points.extend(ecosystem.entry_points(package)?);
+    }
+    let reachable = reachable_files(&ecosystem, entry_points, &sources)?;
+
+    let mut reports: Vec<PackageReport> = packages
         .iter()
-        .filter(|file| !reachable.contains(*file))
-        .map(|file| {
-            let path = relative(root, file);
-            Finding::new(
-                FindingKind::UnusedFile,
-                &package.name,
-                &path,
-                &path,
-                Span::FILE_START,
-            )
+        .map(|package| PackageReport {
+            name: package.name.clone(),
+            path: relative(&root, &package.dir),
+            findings: Vec::new(),
         })
         .collect();
-    Ok(PackageReport {
-        name: package.name.clone(),
-        path: relative(root, &package.dir),
-        findings,
-    })
+    for file in sources.iter().filter(|file| !reachable.contains(*file)) {
+        let Some(owner) = owning_package(packages, file) else {
+            continue;
+        };
+        let path = relative(&root, file);
+        reports[owner].findings.push(Finding::new(
+            FindingKind::UnusedFile,
+            &packages[owner].name,
+            &path,
+            &path,
+            Span::FILE_START,
+        ));
+    }
+    Ok(Report::new(reports))
 }
 
-/// Directories that are never walked, whatever the ecosystem.
-const VCS_DIRS: &[&str] = &[".git", ".hg", ".svn"];
-
-/// Every source file in `dir`, honouring the workspace's own ignore files (not those of enclosing
-/// directories) whether or not the workspace is a git repo.
-fn source_files(ecosystem: &dyn Ecosystem, dir: &Path) -> BTreeSet<PathBuf> {
-    let skipped = ecosystem.skipped_dirs();
-    ignore::WalkBuilder::new(dir)
-        .require_git(false)
-        .parents(false)
-        .filter_entry(move |entry| {
-            !(entry.file_type().is_some_and(|t| t.is_dir())
-                && VCS_DIRS
-                    .iter()
-                    .chain(skipped)
-                    .any(|s| entry.file_name() == *s))
-        })
-        .build()
-        .filter_map(Result::ok)
-        .filter(|entry| entry.file_type().is_some_and(|t| t.is_file()))
-        .map(|entry| entry.into_path())
-        .filter(|path| ecosystem.is_source_file(path))
-        .collect()
+/// The innermost Workspace Package whose directory contains `file`.
+fn owning_package(packages: &[WorkspacePackage], file: &Path) -> Option<usize> {
+    packages
+        .iter()
+        .enumerate()
+        .filter(|(_, package)| file.starts_with(&package.dir))
+        .max_by_key(|(_, package)| package.dir.components().count())
+        .map(|(index, _)| index)
 }
 
-/// Files reachable from the entry points by following imports between the package's own sources.
+/// Files reachable from the entry points by following imports between the workspace's sources.
 fn reachable_files(
     ecosystem: &dyn Ecosystem,
     entry_points: Vec<PathBuf>,

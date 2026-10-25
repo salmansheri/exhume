@@ -1,0 +1,5 @@
+[
+  {"kind": "unused-file", "package": "web", "path": "apps/web/src/dead.ts", "name": "apps/web/src/dead.ts", "line": 1, "column": 1, "confidence": "high", "reasons": []},
+  {"kind": "unused-file", "package": "@acme/ui", "path": "packages/ui/src/unused.ts", "name": "packages/ui/src/unused.ts", "line": 1, "column": 1, "confidence": "high", "reasons": []},
+  {"kind": "unused-file", "package": "@acme/utils", "path": "packages/utils/src/stale.ts", "name": "packages/utils/src/stale.ts", "line": 1, "column": 1, "confidence": "high", "reasons": []}
+]

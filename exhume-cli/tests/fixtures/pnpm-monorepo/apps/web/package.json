@@ -1,0 +1,6 @@
+{
+  "name": "web",
+  "private": true,
+  "main": "src/index.ts",
+  "dependencies": { "@acme/ui": "workspace:*", "@acme/utils": "workspace:*" }
+}

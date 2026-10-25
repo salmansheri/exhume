@@ -34,3 +34,12 @@ fn exits_with_0_when_nothing_is_unused() {
     assert_eq!(output.status.code(), Some(0), "stdout:\n{stdout}");
     assert!(stdout.contains("0 findings"), "stdout:\n{stdout}");
 }
+
+#[test]
+fn exits_with_2_and_explains_why_on_a_yarn_plug_n_play_workspace() {
+    let output = exhume("yarn-pnp");
+    let stderr = String::from_utf8(output.stderr).unwrap();
+
+    assert_eq!(output.status.code(), Some(2), "stderr:\n{stderr}");
+    assert!(stderr.contains("Plug'n'Play"), "stderr:\n{stderr}");
+}

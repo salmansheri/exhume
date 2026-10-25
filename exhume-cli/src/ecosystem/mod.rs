@@ -12,8 +12,10 @@ pub struct WorkspacePackage {
     pub dir: PathBuf,
 }
 
+/// An ecosystem loaded for one workspace, which it has already discovered.
 pub trait Ecosystem {
-    fn packages(&self, root: &Path) -> anyhow::Result<Vec<WorkspacePackage>>;
+    /// The workspace's packages, the root package (if it has a manifest) included.
+    fn packages(&self) -> &[WorkspacePackage];
 
     /// Directory names that are never walked, whatever the ignore files say.
     fn skipped_dirs(&self) -> &'static [&'static str];

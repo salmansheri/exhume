@@ -93,3 +93,51 @@ fn ignore_files_above_the_workspace_root_do_not_hide_its_files() {
     let paths: Vec<&str> = report.findings().map(|f| f.path.as_str()).collect();
     assert_eq!(paths, ["src/orphan.ts"]);
 }
+
+fn package_names(report: &Report) -> Vec<&str> {
+    report.packages.iter().map(|p| p.name.as_str()).collect()
+}
+
+#[test]
+fn pnpm_workspace_packages_are_discovered_and_resolved_by_name_and_alias() {
+    let report = scan(&fixture("pnpm-monorepo"));
+    assert_eq!(
+        package_names(&report),
+        ["pnpm-monorepo", "web", "@acme/ui", "@acme/utils"]
+    );
+    assert_expected("pnpm-monorepo", &report);
+}
+
+#[test]
+fn workspaces_field_in_array_form_discovers_every_package() {
+    let report = scan(&fixture("npm-workspaces"));
+    assert_eq!(package_names(&report), ["npm-workspaces", "app", "lib"]);
+    assert_expected("npm-workspaces", &report);
+}
+
+#[test]
+fn workspaces_field_in_object_form_discovers_every_package() {
+    let report = scan(&fixture("yarn-workspaces"));
+    assert_eq!(package_names(&report), ["yarn-workspaces", "core"]);
+    assert_expected("yarn-workspaces", &report);
+}
+
+#[test]
+fn yarn_plug_n_play_workspaces_are_rejected() {
+    let error = exhume::scan(&fixture("yarn-pnp"), &Options::default()).unwrap_err();
+    assert!(
+        format!("{error:#}").contains("Yarn Plug'n'Play is not supported"),
+        "{error:#}"
+    );
+}
+
+#[test]
+fn yarn_plug_n_play_is_rejected_from_yarnrc_before_install() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(dir.path().join("package.json"), r#"{ "name": "fresh" }"#).unwrap();
+    std::fs::write(dir.path().join(".yarnrc.yml"), "nodeLinker: \"pnp\"\n").unwrap();
+
+    let error = exhume::scan(dir.path(), &Options::default()).unwrap_err();
+
+    assert!(format!("{error:#}").contains("Plug'n'Play"), "{error:#}");
+}
