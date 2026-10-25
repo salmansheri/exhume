@@ -1,0 +1,80 @@
+---
+source: tests/scan.rs
+expression: report
+---
+{
+  "packages": [
+    {
+      "name": "single-package",
+      "path": ".",
+      "findings": [
+        {
+          "id": "8fa18657429dc80f",
+          "kind": "unused-file",
+          "package": "single-package",
+          "path": "src/Widget.tsx",
+          "name": "src/Widget.tsx",
+          "span": {
+            "start": 0,
+            "end": 0,
+            "line": 1,
+            "column": 1
+          },
+          "confidence": "high",
+          "reasons": []
+        },
+        {
+          "id": "96b741fbbe0494cd",
+          "kind": "unused-file",
+          "package": "single-package",
+          "path": "src/dead-helper.ts",
+          "name": "src/dead-helper.ts",
+          "span": {
+            "start": 0,
+            "end": 0,
+            "line": 1,
+            "column": 1
+          },
+          "confidence": "high",
+          "reasons": []
+        },
+        {
+          "id": "5e9e1ff4e717c587",
+          "kind": "unused-file",
+          "package": "single-package",
+          "path": "src/dead.ts",
+          "name": "src/dead.ts",
+          "span": {
+            "start": 0,
+            "end": 0,
+            "line": 1,
+            "column": 1
+          },
+          "confidence": "high",
+          "reasons": []
+        },
+        {
+          "id": "0e2a38e5cba1f92f",
+          "kind": "unused-file",
+          "package": "single-package",
+          "path": "src/legacy.cjs",
+          "name": "src/legacy.cjs",
+          "span": {
+            "start": 0,
+            "end": 0,
+            "line": 1,
+            "column": 1
+          },
+          "confidence": "high",
+          "reasons": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total": 4,
+    "high": 4,
+    "medium": 0,
+    "low": 0
+  }
+}

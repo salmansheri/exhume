@@ -1,0 +1,6 @@
+[
+  { "kind": "unused-file", "package": "single-package", "path": "src/Widget.tsx", "confidence": "high" },
+  { "kind": "unused-file", "package": "single-package", "path": "src/dead-helper.ts", "confidence": "high" },
+  { "kind": "unused-file", "package": "single-package", "path": "src/dead.ts", "confidence": "high" },
+  { "kind": "unused-file", "package": "single-package", "path": "src/legacy.cjs", "confidence": "high" }
+]

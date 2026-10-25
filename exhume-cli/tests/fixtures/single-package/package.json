@@ -1,0 +1,10 @@
+{
+  "name": "single-package",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "bin": { "sp": "bin/cli.mjs" },
+  "exports": {
+    ".": { "import": "./src/index.ts", "require": "./src/index.ts" },
+    "./extra": "./src/extra.ts"
+  }
+}
