@@ -1,0 +1,6 @@
+[
+  {"kind": "unused-export", "package": "in-code-ignores", "path": "src/lib.ts", "name": "reported", "line": 6, "column": 14, "confidence": "high", "reasons": []},
+  {"kind": "unused-export", "package": "in-code-ignores", "path": "src/lib.ts", "name": "notJsdoc", "line": 13, "column": 14, "confidence": "high", "reasons": []},
+  {"kind": "unused-export", "package": "in-code-ignores", "path": "src/lib.ts", "name": "publicity", "line": 15, "column": 14, "confidence": "high", "reasons": []},
+  {"kind": "unused-export", "package": "in-code-ignores", "path": "src/lib.ts", "name": "second", "line": 20, "column": 25, "confidence": "high", "reasons": []}
+]

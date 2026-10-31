@@ -1,1 +1,1 @@
-{ "name": "cjs-and-unresolved", "private": true, "main": "src/index.ts" }
+{ "name": "cjs-and-unresolved", "main": "src/index.ts" }

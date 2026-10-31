@@ -1,0 +1,1 @@
+{ "name": "public-api", "private": true, "workspaces": ["packages/*"] }

@@ -12,6 +12,8 @@ pub struct WorkspacePackage {
     pub name: String,
     /// Absolute, canonical directory of the package.
     pub dir: PathBuf,
+    /// Never published, so it has no Public API.
+    pub private: bool,
 }
 
 /// An ecosystem loaded for one workspace, which it has already discovered.
@@ -57,6 +59,8 @@ pub struct Module {
     pub opaque_imports: Vec<OpaqueImport>,
     /// Specifiers loaded with CommonJS `require()`, whose interop exhume can't follow exactly.
     pub required: Vec<String>,
+    /// Lines after an `exhume-ignore-next-line` comment, each of which suppresses one finding.
+    pub ignored_lines: Vec<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -78,6 +82,8 @@ pub struct Export {
     pub name: String,
     /// Where the exported name is written.
     pub span: Span,
+    /// Marked by a JSDoc `@public` tag, so it counts as used whether or not anything imports it.
+    pub tagged_public: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

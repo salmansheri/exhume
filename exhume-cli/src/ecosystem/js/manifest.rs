@@ -7,6 +7,8 @@ use serde_json::Value;
 #[derive(Debug, Default, Deserialize)]
 pub struct Manifest {
     pub name: Option<String>,
+    #[serde(default)]
+    pub private: bool,
     main: Option<String>,
     module: Option<String>,
     types: Option<String>,

@@ -53,8 +53,12 @@ A finding for a source file that is not reachable from any entry point. It inclu
 _Avoid_: Orphan file, dead file
 
 **Unused Export**:
-A finding for an export of a reachable file that nothing imports, excluding public API.
+A finding for an export of a reachable file that nothing imports, excluding public API unless `--include-public-api` is passed.
 _Avoid_: Dead export
+
+**In-code Ignore**:
+A comment that keeps an export out of the findings: a JSDoc `@public` tag marks it as used, and `exhume-ignore-next-line` suppresses one finding on the line below.
+_Avoid_: Pragma, suppression comment
 
 **Unused Dependency**:
 A finding for a declared dependency that no source file, config file or script uses.

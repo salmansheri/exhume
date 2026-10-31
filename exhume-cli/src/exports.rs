@@ -32,18 +32,20 @@ enum Demand<'a> {
     All(&'a Path),
 }
 
-/// The exports of `files` that nothing imports. Entry points' exports count as used.
+/// The exports of `files` that nothing imports. Every export of `public_entry_points`, and all
+/// they re-export, counts as used: that is the Public API. Exports tagged `@public` are never
+/// reported, and an ignored line suppresses one finding.
 ///
 /// Each import demands a name (or every name) of its target. A demanded name is satisfied by
 /// the file's own export of that name, else forwarded by the named re-export that exports it,
 /// else forwarded through every `export *`. Demands are deduplicated, so cycles terminate.
 pub(crate) fn unused<'a>(
     files: &'a HashMap<PathBuf, ParsedFile>,
-    entry_points: &HashSet<PathBuf>,
+    public_entry_points: &HashSet<PathBuf>,
 ) -> Vec<(&'a Path, &'a Export)> {
     let mut queue: Vec<Demand<'a>> = Vec::new();
     for (path, file) in files {
-        if entry_points.contains(path) {
+        if public_entry_points.contains(path) {
             queue.push(Demand::All(path));
         }
         for import in &file.module.imports {
@@ -127,17 +129,27 @@ pub(crate) fn unused<'a>(
         }
     }
 
-    files
-        .iter()
-        .filter(|(path, _)| !used_all.contains(path.as_path()))
-        .flat_map(|(path, file)| {
-            file.module
-                .exports
-                .iter()
-                .map(move |export| (path.as_path(), export))
-        })
-        .filter(|(path, export)| !used_names.contains(&(*path, export.name.as_str())))
-        .collect()
+    let mut unused = Vec::new();
+    for (path, file) in files {
+        if used_all.contains(path.as_path()) {
+            continue;
+        }
+        let mut ignored_lines: HashSet<u32> = file.module.ignored_lines.iter().copied().collect();
+        let mut exports: Vec<&Export> = file.module.exports.iter().collect();
+        exports.sort_by_key(|export| export.span.start);
+        for export in exports {
+            if export.tagged_public || used_names.contains(&(path.as_path(), export.name.as_str()))
+            {
+                continue;
+            }
+            // Each ignore comment suppresses exactly one finding, the first on its line.
+            if ignored_lines.remove(&export.span.line) {
+                continue;
+            }
+            unused.push((path.as_path(), export));
+        }
+    }
+    unused
 }
 
 fn demand<'a>(target: &'a Path, name: &'a ImportedName) -> Demand<'a> {

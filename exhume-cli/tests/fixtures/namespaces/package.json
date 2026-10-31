@@ -1,1 +1,1 @@
-{ "name": "namespaces", "private": true, "main": "src/index.ts" }
+{ "name": "namespaces", "main": "src/index.ts" }

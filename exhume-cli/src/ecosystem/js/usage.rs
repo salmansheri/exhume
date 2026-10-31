@@ -15,6 +15,8 @@ use oxc_syntax::operator::BinaryOperator;
 pub struct NameUse {
     /// Members read with a static key, as in `ns.a` or the type `ns.A`.
     pub members: BTreeSet<String>,
+    /// Whether the name is exported again, as in `export { name }`.
+    pub re_exported: bool,
     /// Whether the name is used any other way: passed, spread, indexed with a computed key.
     pub escapes: bool,
 }
@@ -213,9 +215,10 @@ impl<'a> Visit<'a> for Visitor<'a> {
                 }
                 _ => None,
             };
-            match members {
-                Some(members) => name_use.members.extend(members),
-                None => name_use.escapes = true,
+            match (members, self.ancestors.last()) {
+                (Some(members), _) => name_use.members.extend(members),
+                (None, Some(AstKind::ExportSpecifier(_))) => name_use.re_exported = true,
+                (None, _) => name_use.escapes = true,
             }
         }
         self.ancestors.push(kind);

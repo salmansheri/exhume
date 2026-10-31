@@ -10,11 +10,18 @@ struct Cli {
     /// Root of the workspace to scan.
     #[arg(default_value = ".")]
     path: PathBuf,
+
+    /// Report unused Public API of published packages too.
+    #[arg(long)]
+    include_public_api: bool,
 }
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
-    match exhume::scan(&cli.path, &exhume::Options::default()) {
+    let options = exhume::Options {
+        include_public_api: cli.include_public_api,
+    };
+    match exhume::scan(&cli.path, &options) {
         Ok(report) => {
             print!("{}", report.to_text());
             if report.summary.total == 0 {

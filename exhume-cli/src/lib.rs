@@ -17,10 +17,13 @@ pub use finding::{Confidence, Finding, FindingKind, Reason, ReasonCode, Span};
 pub use report::{PackageReport, Report, Summary};
 
 #[derive(Debug, Clone, Default)]
-pub struct Options {}
+pub struct Options {
+    /// Report unused Public API too, instead of counting it as used by code outside the workspace.
+    pub include_public_api: bool,
+}
 
 /// Scans the workspace at `root` and reports everything it finds unused.
-pub fn scan(root: &Path, _options: &Options) -> anyhow::Result<Report> {
+pub fn scan(root: &Path, options: &Options) -> anyhow::Result<Report> {
     let root = root
         .canonicalize()
         .with_context(|| format!("cannot read workspace at {}", root.display()))?;
@@ -31,10 +34,16 @@ pub fn scan(root: &Path, _options: &Options) -> anyhow::Result<Report> {
         .filter(|path| ecosystem.is_source_file(path))
         .collect();
     let mut entry_points = Vec::new();
+    // Entry points of published packages, whose exports code outside the workspace may use.
+    let mut public_entry_points = HashSet::new();
     for package in packages {
-        entry_points.extend(ecosystem.entry_points(package)?);
+        let entries = ecosystem.entry_points(package)?;
+        if !package.private && !options.include_public_api {
+            public_entry_points.extend(entries.iter().cloned());
+        }
+        entry_points.extend(entries);
     }
-    let reachable = reachable_files(&ecosystem, entry_points.clone(), &sources)?;
+    let reachable = reachable_files(&ecosystem, entry_points, &sources)?;
     let blind_spots = BlindSpots::find(
         &reachable,
         |file| owning_package(packages, file),
@@ -65,8 +74,7 @@ pub fn scan(root: &Path, _options: &Options) -> anyhow::Result<Report> {
             .lowered_by(blind_spots.reasons(file, owner)),
         );
     }
-    let entry_points: HashSet<PathBuf> = entry_points.into_iter().collect();
-    for (file, export) in exports::unused(&reachable, &entry_points) {
+    for (file, export) in exports::unused(&reachable, &public_entry_points) {
         let Some(owner) = owning_package(packages, file) else {
             continue;
         };

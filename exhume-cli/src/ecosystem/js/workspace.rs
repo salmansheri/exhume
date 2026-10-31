@@ -34,7 +34,14 @@ pub fn discover(root: &Path) -> anyhow::Result<Vec<(WorkspacePackage, Manifest)>
                 dir.display()
             );
         }
-        packages.push((WorkspacePackage { name, dir }, manifest));
+        packages.push((
+            WorkspacePackage {
+                name,
+                dir,
+                private: manifest.private,
+            },
+            manifest,
+        ));
     }
     Ok(packages)
 }

@@ -1,1 +1,1 @@
-{ "name": "opaque", "private": true, "main": "src/index.ts" }
+{ "name": "opaque", "main": "src/index.ts" }

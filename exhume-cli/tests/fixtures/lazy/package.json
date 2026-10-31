@@ -1,1 +1,1 @@
-{ "name": "lazy", "private": true, "main": "src/index.ts" }
+{ "name": "lazy", "main": "src/index.ts" }

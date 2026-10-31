@@ -53,7 +53,12 @@ fn scan(dir: &Path) -> Report {
 
 /// Asserts that the report contains exactly the findings planted in the fixture's `expected.json`.
 fn assert_expected(name: &str, report: &Report) {
-    let raw = std::fs::read_to_string(fixture(name).join("expected.json")).unwrap();
+    assert_expected_in(name, "expected.json", report);
+}
+
+/// Like `assert_expected`, for a fixture that plants different findings for different options.
+fn assert_expected_in(name: &str, expected_file: &str, report: &Report) {
+    let raw = std::fs::read_to_string(fixture(name).join(expected_file)).unwrap();
     let mut expected: Vec<FindingRow> = serde_json::from_str(&raw).unwrap();
     let mut actual: Vec<FindingRow> = report.findings().map(FindingRow::from).collect();
     expected.sort();
@@ -232,4 +237,25 @@ fn findings_behind_a_cjs_boundary_or_an_unresolvable_specifier_are_lowered() {
 fn an_unresolvable_path_alias_lowers_the_findings_of_its_package() {
     let report = scan(&fixture("unresolved-alias"));
     assert_expected("unresolved-alias", &report);
+}
+
+#[test]
+fn exports_reachable_from_a_public_packages_entry_points_are_public_api() {
+    let report = scan(&fixture("public-api"));
+    assert_expected("public-api", &report);
+}
+
+#[test]
+fn include_public_api_reports_public_api_exports_too() {
+    let options = Options {
+        include_public_api: true,
+    };
+    let report = exhume::scan(&fixture("public-api"), &options).expect("scan should succeed");
+    assert_expected_in("public-api", "expected-include-public-api.json", &report);
+}
+
+#[test]
+fn a_public_tag_marks_an_export_used_and_an_ignore_comment_suppresses_the_next_line() {
+    let report = scan(&fixture("in-code-ignores"));
+    assert_expected("in-code-ignores", &report);
 }

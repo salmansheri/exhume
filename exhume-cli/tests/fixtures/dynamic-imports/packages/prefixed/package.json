@@ -1,1 +1,1 @@
-{ "name": "prefixed", "private": true, "main": "src/index.ts" }
+{ "name": "prefixed", "main": "src/index.ts" }

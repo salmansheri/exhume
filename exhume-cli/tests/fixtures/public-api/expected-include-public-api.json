@@ -1,0 +1,9 @@
+[
+  {"kind": "unused-export", "package": "lib", "path": "packages/lib/src/helper.ts", "name": "internal", "line": 2, "column": 14, "confidence": "high", "reasons": []},
+  {"kind": "unused-export", "package": "app", "path": "packages/app/src/index.ts", "name": "start", "line": 4, "column": 14, "confidence": "high", "reasons": []},
+  {"kind": "unused-export", "package": "app", "path": "packages/app/src/forward.ts", "name": "forwarded", "line": 1, "column": 14, "confidence": "high", "reasons": []},
+  {"kind": "unused-export", "package": "lib", "path": "packages/lib/src/helper.ts", "name": "helper", "line": 1, "column": 14, "confidence": "high", "reasons": []},
+  {"kind": "unused-export", "package": "lib", "path": "packages/lib/src/shared.ts", "name": "shared", "line": 1, "column": 14, "confidence": "high", "reasons": []},
+  {"kind": "unused-export", "package": "lib", "path": "packages/lib/src/index.ts", "name": "version", "line": 5, "column": 14, "confidence": "high", "reasons": []},
+  {"kind": "unused-export", "package": "lib", "path": "packages/lib/src/alias.ts", "name": "aliased", "line": 1, "column": 14, "confidence": "high", "reasons": []}
+]
