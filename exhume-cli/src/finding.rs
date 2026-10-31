@@ -17,6 +17,7 @@ serialize_as_str!(FindingKind, Confidence);
 pub enum FindingKind {
     UnusedFile,
     UnusedExport,
+    UnusedDependency,
 }
 
 impl FindingKind {
@@ -24,6 +25,7 @@ impl FindingKind {
         match self {
             FindingKind::UnusedFile => "unused-file",
             FindingKind::UnusedExport => "unused-export",
+            FindingKind::UnusedDependency => "unused-dependency",
         }
     }
 
@@ -31,6 +33,7 @@ impl FindingKind {
         match self {
             FindingKind::UnusedFile => "Unused Files",
             FindingKind::UnusedExport => "Unused Exports",
+            FindingKind::UnusedDependency => "Unused Dependencies",
         }
     }
 }

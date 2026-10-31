@@ -1,0 +1,5 @@
+{
+  "name": "c",
+  "main": "src/index.ts",
+  "dependencies": { "some-plugin": "^1.0.0" }
+}

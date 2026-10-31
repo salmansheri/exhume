@@ -33,6 +33,23 @@ pub trait Ecosystem {
     fn module(&self, file: &Path) -> anyhow::Result<Module>;
 
     fn resolve(&self, from: &Path, specifier: &str) -> Resolution;
+
+    /// The Dependencies a Workspace Package declares.
+    fn dependencies(&self, package: &WorkspacePackage) -> Vec<Dependency>;
+
+    /// The names a Dependency would have if importing `specifier` used it: the package it
+    /// names and that package's type definitions. Whether any is declared is not checked.
+    fn dependencies_imported_by(&self, specifier: &str) -> Vec<String>;
+}
+
+/// A Dependency as its Workspace Package declares it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Dependency {
+    pub name: String,
+    /// The manifest that declares it.
+    pub manifest: PathBuf,
+    /// Where its name is written in the manifest.
+    pub span: Span,
 }
 
 /// Where a specifier leads.

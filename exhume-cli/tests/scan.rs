@@ -259,3 +259,9 @@ fn a_public_tag_marks_an_export_used_and_an_ignore_comment_suppresses_the_next_l
     let report = scan(&fixture("in-code-ignores"));
     assert_expected("in-code-ignores", &report);
 }
+
+#[test]
+fn declared_dependencies_that_no_file_of_their_package_imports_are_unused() {
+    let report = scan(&fixture("dependencies"));
+    assert_expected("dependencies", &report);
+}

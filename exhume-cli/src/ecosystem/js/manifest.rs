@@ -1,8 +1,11 @@
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 use anyhow::Context;
 use serde::Deserialize;
 use serde_json::Value;
+
+use crate::finding::Span;
 
 #[derive(Debug, Default, Deserialize)]
 pub struct Manifest {
@@ -16,6 +19,17 @@ pub struct Manifest {
     bin: Option<Value>,
     exports: Option<Value>,
     workspaces: Option<Workspaces>,
+    #[serde(default)]
+    dependencies: BTreeMap<String, Value>,
+    #[serde(default, rename = "devDependencies")]
+    dev_dependencies: BTreeMap<String, Value>,
+    #[serde(default, rename = "peerDependencies")]
+    peer_dependencies: BTreeMap<String, Value>,
+    #[serde(default, rename = "optionalDependencies")]
+    optional_dependencies: BTreeMap<String, Value>,
+    /// The manifest's text, for locating what it declares.
+    #[serde(skip)]
+    raw: String,
 }
 
 /// The `workspaces` field: an array of patterns (npm, bun) or an object with `packages` (yarn).
@@ -41,9 +55,48 @@ impl Manifest {
         let Ok(raw) = std::fs::read_to_string(&path) else {
             return Ok(None);
         };
-        serde_json::from_str(&raw)
-            .map(Some)
-            .with_context(|| format!("invalid {}", path.display()))
+        let mut manifest: Manifest =
+            serde_json::from_str(&raw).with_context(|| format!("invalid {}", path.display()))?;
+        manifest.raw = raw;
+        Ok(Some(manifest))
+    }
+
+    /// Each declared Dependency once, with where its key is written. A name declared in two
+    /// fields is located in the first.
+    pub fn dependencies(&self) -> Vec<(String, Span)> {
+        // The fields that declare Dependencies, by their manifest key, in reporting order.
+        let fields = [
+            ("dependencies", &self.dependencies),
+            ("devDependencies", &self.dev_dependencies),
+            ("peerDependencies", &self.peer_dependencies),
+            ("optionalDependencies", &self.optional_dependencies),
+        ];
+        let mut seen = BTreeSet::new();
+        let mut declared = Vec::new();
+        for (field, names) in fields {
+            for name in names.keys() {
+                if seen.insert(name.as_str()) {
+                    let span = self.key_span(field, name).unwrap_or(Span::FILE_START);
+                    declared.push((name.clone(), span));
+                }
+            }
+        }
+        declared
+    }
+
+    /// Where `"key":` is written inside the object of top-level `"field":`, found textually
+    /// because serde_json keeps no positions.
+    fn key_span(&self, field: &str, key: &str) -> Option<Span> {
+        let field_at = find_key(&self.raw, field, 0)?;
+        let start = find_key(&self.raw, key, field_at)?;
+        let before = &self.raw[..start];
+        let line_start = before.rfind('\n').map_or(0, |i| i + 1);
+        Some(Span {
+            start: start as u32,
+            end: (start + key.len() + 2) as u32,
+            line: before.matches('\n').count() as u32 + 1,
+            column: before[line_start..].chars().count() as u32 + 1,
+        })
     }
 
     /// Whether `exports` restricts which subpaths other packages may import.
@@ -74,6 +127,15 @@ impl Manifest {
         paths.retain(|p| !p.contains('*'));
         paths
     }
+}
+
+/// The byte offset of the first `"key"` at or after `from` that is followed by a colon.
+fn find_key(raw: &str, key: &str, from: usize) -> Option<usize> {
+    let quoted = format!("\"{key}\"");
+    raw[from..].match_indices(&quoted).find_map(|(i, _)| {
+        let after = raw[from + i + quoted.len()..].trim_start();
+        after.starts_with(':').then_some(from + i)
+    })
 }
 
 fn collect_strings(value: &Value, out: &mut Vec<String>) {

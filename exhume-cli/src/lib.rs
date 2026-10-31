@@ -1,4 +1,5 @@
 mod blind_spots;
+mod dependencies;
 pub mod ecosystem;
 mod exports;
 pub mod finding;
@@ -87,6 +88,30 @@ pub fn scan(root: &Path, options: &Options) -> anyhow::Result<Report> {
                 export.span,
             )
             .lowered_by(blind_spots.reasons(file, owner)),
+        );
+    }
+    let unused_dependencies = dependencies::unused(
+        &ecosystem,
+        packages,
+        &sources,
+        &reachable,
+        |file| owning_package(packages, file),
+        |file| relative(&root, file),
+    )?;
+    for unused in unused_dependencies {
+        let mut reasons = blind_spots.reasons(&unused.dependency.manifest, unused.package);
+        reasons.extend(unused.reasons);
+        reasons.sort();
+        reasons.dedup();
+        reports[unused.package].findings.push(
+            Finding::new(
+                FindingKind::UnusedDependency,
+                &packages[unused.package].name,
+                &relative(&root, &unused.dependency.manifest),
+                &unused.dependency.name,
+                unused.dependency.span,
+            )
+            .lowered_by(reasons),
         );
     }
     Ok(Report::new(reports))

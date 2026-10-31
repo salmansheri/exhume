@@ -1,1 +1,1 @@
-{ "name": "opaque", "main": "src/index.ts" }
+{ "name": "opaque", "main": "src/index.ts", "dependencies": { "some-plugin": "^1.0.0" } }

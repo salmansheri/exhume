@@ -1,0 +1,9 @@
+[
+  {"kind": "unused-dependency", "package": "a", "path": "packages/a/package.json", "name": "left-pad", "line": 7, "column": 5, "confidence": "high", "reasons": []},
+  {"kind": "unused-dependency", "package": "a", "path": "packages/a/package.json", "name": "@types/unused-thing", "line": 13, "column": 5, "confidence": "high", "reasons": []},
+  {"kind": "unused-dependency", "package": "a", "path": "packages/a/package.json", "name": "react", "line": 15, "column": 25, "confidence": "high", "reasons": []},
+  {"kind": "unused-dependency", "package": "a", "path": "packages/a/package.json", "name": "fsevents", "line": 16, "column": 29, "confidence": "high", "reasons": []},
+  {"kind": "unused-dependency", "package": "b", "path": "packages/b/package.json", "name": "lodash", "line": 4, "column": 21, "confidence": "high", "reasons": []},
+  {"kind": "unused-dependency", "package": "c", "path": "packages/c/package.json", "name": "some-plugin", "line": 4, "column": 21, "confidence": "medium", "reasons": ["dynamic-import"]},
+  {"kind": "unused-file", "package": "c", "path": "packages/c/src/loader.ts", "name": "packages/c/src/loader.ts", "line": 1, "column": 1, "confidence": "high", "reasons": []}
+]

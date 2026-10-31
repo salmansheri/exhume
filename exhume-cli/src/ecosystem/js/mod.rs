@@ -9,11 +9,56 @@ use std::path::{Component, Path, PathBuf};
 
 use anyhow::Context;
 
-use super::{Ecosystem, Module, Resolution, WorkspacePackage};
+use super::{Dependency, Ecosystem, Module, Resolution, WorkspacePackage};
 use manifest::Manifest;
 
 const SOURCE_EXTENSIONS: &[&str] = &["js", "jsx", "mjs", "cjs", "ts", "tsx", "mts", "cts"];
 const SKIPPED_DIRS: &[&str] = &["node_modules"];
+/// Node's built-in modules, which can be imported without the `node:` prefix.
+const NODE_BUILTINS: &[&str] = &[
+    "assert",
+    "async_hooks",
+    "buffer",
+    "child_process",
+    "cluster",
+    "console",
+    "constants",
+    "crypto",
+    "dgram",
+    "diagnostics_channel",
+    "dns",
+    "domain",
+    "events",
+    "fs",
+    "http",
+    "http2",
+    "https",
+    "inspector",
+    "module",
+    "net",
+    "os",
+    "path",
+    "perf_hooks",
+    "process",
+    "punycode",
+    "querystring",
+    "readline",
+    "repl",
+    "stream",
+    "string_decoder",
+    "sys",
+    "timers",
+    "tls",
+    "trace_events",
+    "tty",
+    "url",
+    "util",
+    "v8",
+    "vm",
+    "wasi",
+    "worker_threads",
+    "zlib",
+];
 
 pub struct JsEcosystem {
     packages: Vec<WorkspacePackage>,
@@ -123,6 +168,42 @@ impl Ecosystem for JsEcosystem {
             Resolution::Unresolved { dir: None }
         }
     }
+
+    fn dependencies(&self, package: &WorkspacePackage) -> Vec<Dependency> {
+        let Some(manifest) = self.manifests.get(&package.dir) else {
+            return Vec::new();
+        };
+        manifest
+            .dependencies()
+            .into_iter()
+            .map(|(name, span)| Dependency {
+                name,
+                manifest: package.dir.join("package.json"),
+                span,
+            })
+            .collect()
+    }
+
+    fn dependencies_imported_by(&self, specifier: &str) -> Vec<String> {
+        // Built-ins are typed by @types/node; with `node:` they can't mean an npm package.
+        if specifier.starts_with("node:") {
+            return vec!["@types/node".to_owned()];
+        }
+        if specifier.starts_with(['.', '/']) || specifier.contains(':') {
+            return Vec::new();
+        }
+        let (name, _) = split_package_specifier(specifier);
+        let types = if NODE_BUILTINS.contains(&name) {
+            "@types/node".to_owned()
+        } else {
+            types_package(name)
+        };
+        if types == name {
+            vec![types]
+        } else {
+            vec![name.to_owned(), types]
+        }
+    }
 }
 
 /// Splits `@scope/pkg/sub/path` into (`@scope/pkg`, `/sub/path`) and `pkg/sub` into (`pkg`, `/sub`).
@@ -134,6 +215,21 @@ fn split_package_specifier(specifier: &str) -> (&str, &str) {
         .nth(name_segments - 1)
         .map_or(specifier.len(), |(i, _)| i);
     specifier.split_at(end)
+}
+
+/// The DefinitelyTyped package for `name`: `@types/pkg`, or `@types/scope__pkg` for `@scope/pkg`.
+/// An `@types/*` package is its own types.
+fn types_package(name: &str) -> String {
+    if name.starts_with("@types/") {
+        return name.to_owned();
+    }
+    match name
+        .strip_prefix('@')
+        .and_then(|scoped| scoped.split_once('/'))
+    {
+        Some((scope, pkg)) => format!("@types/{scope}__{pkg}"),
+        None => format!("@types/{name}"),
+    }
 }
 
 /// Whether `name` could be an npm package name, `pkg` or `@scope/pkg`.

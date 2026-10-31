@@ -2,5 +2,6 @@
   {"kind": "unused-file", "package": "prefixed", "path": "packages/prefixed/src/pages/home.ts", "name": "packages/prefixed/src/pages/home.ts", "line": 1, "column": 1, "confidence": "medium", "reasons": ["dynamic-import"]},
   {"kind": "unused-file", "package": "prefixed", "path": "packages/prefixed/src/stale.ts", "name": "packages/prefixed/src/stale.ts", "line": 1, "column": 1, "confidence": "high", "reasons": []},
   {"kind": "unused-file", "package": "opaque", "path": "packages/opaque/src/plugin.ts", "name": "packages/opaque/src/plugin.ts", "line": 1, "column": 1, "confidence": "medium", "reasons": ["dynamic-import"]},
-  {"kind": "unused-export", "package": "opaque", "path": "packages/opaque/src/util.ts", "name": "spare", "line": 2, "column": 14, "confidence": "medium", "reasons": ["dynamic-import"]}
+  {"kind": "unused-export", "package": "opaque", "path": "packages/opaque/src/util.ts", "name": "spare", "line": 2, "column": 14, "confidence": "medium", "reasons": ["dynamic-import"]},
+  {"kind": "unused-dependency", "package": "opaque", "path": "packages/opaque/package.json", "name": "some-plugin", "line": 1, "column": 63, "confidence": "medium", "reasons": ["dynamic-import"]}
 ]
