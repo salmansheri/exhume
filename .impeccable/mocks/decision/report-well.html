@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--g:#d9dde0;--hi:#f7f9fb;--lo:#b3b9bf;--ink:#1c2125;--mute:#4a535b;--ac:#12705f}
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;background:var(--g);color:var(--ink);font-family:"Schibsted Grotesk",sans-serif}
+.up{box-shadow:9px 9px 20px var(--lo),-9px -9px 20px var(--hi)}
+.in{box-shadow:inset 9px 9px 18px var(--lo),inset -9px -9px 18px var(--hi)}
+nav{display:flex;justify-content:space-between;align-items:center;padding:30px 80px}
+.mark{font-weight:800;font-size:24px;letter-spacing:-.02em}
+nav a{color:var(--mute);text-decoration:none;font-size:16px;margin-left:32px}
+header{padding:18px 80px 34px;display:flex;justify-content:space-between;align-items:flex-end}
+h1{font-size:64px;line-height:1;letter-spacing:-.035em;font-weight:800}
+h1 em{font-style:normal;color:var(--ac)}
+.lede{font-size:19px;color:var(--mute);max-width:430px;line-height:1.45;text-align:right}
+.well{margin:0 64px;border-radius:40px;padding:34px 44px;height:610px;font-family:"JetBrains Mono",monospace;font-size:17px}
+.cmdline{display:flex;justify-content:space-between;align-items:center;border-radius:20px;padding:16px 22px;background:var(--g)}
+.cmdline code{font-size:17px}.cmdline code i{font-style:normal;color:var(--mute)}
+.copy{border-radius:14px;padding:10px 20px;font-family:"Schibsted Grotesk";font-weight:700;font-size:15px}
+.run{margin:26px 0 14px;color:var(--mute)}
+.pkg{margin-top:16px;font-weight:600}
+.grp{color:var(--mute);margin:6px 0 8px 26px}
+.f{display:flex;justify-content:space-between;width:640px;margin:8px 0 0 52px;padding:9px 16px;border-radius:12px;background:var(--g)}
+.f b{color:var(--ac);font-weight:600}
+.sum{display:flex;justify-content:space-between;align-items:center;margin-top:26px}
+.exit{border-radius:16px;padding:12px 22px;font-weight:600}
+.exit span{color:var(--ac)}
+</style></head><body>
+<nav><div class="mark">exhume</div><div><a href="#">Why trust it</a><a href="#">CI</a><a href="#">Roadmap</a><a href="#">GitHub</a></div></nav>
+<header><h1>Unused files, <em>reported straight.</em></h1>
+<p class="lede">This is exhume's real output on a pnpm monorepo from its own test fixtures. Nothing below is edited.</p></header>
+<section class="well in">
+  <div class="cmdline up"><code><i>$</i> cargo install --git https://github.com/salmansheri/exhume exhume-cli</code><span class="copy up">Copy</span></div>
+  <div class="run">$ exhume tests/fixtures/pnpm-monorepo</div>
+  <div class="pkg">web (apps/web)</div><div class="grp">Unused Files (1)</div>
+  <div class="f up"><span>apps/web/src/dead.ts:1:1</span><b>high</b></div>
+  <div class="pkg">@acme/ui (packages/ui)</div><div class="grp">Unused Files (2)</div>
+  <div class="f up"><span>packages/ui/src/internal.ts:1:1</span><b>high</b></div>
+  <div class="f up"><span>packages/ui/src/unused.ts:1:1</span><b>high</b></div>
+  <div class="pkg">@acme/utils (packages/utils)</div><div class="grp">Unused Files (1)</div>
+  <div class="f up"><span>packages/utils/src/stale.ts:1:1</span><b>high</b></div>
+  <div class="sum"><span>4 findings (4 high, 0 medium, 0 low)</span><span class="exit up">exit <span>1</span></span></div>
+</section>
+</body></html>

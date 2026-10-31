@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--g:#d9dde0;--hi:#f7f9fb;--lo:#b3b9bf;--ink:#1c2125;--mute:#4a535b;--ac:#12705f}
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;background:var(--g);color:var(--ink);font-family:"Schibsted Grotesk",sans-serif}
+.up{box-shadow:10px 10px 22px var(--lo),-10px -10px 22px var(--hi)}
+.in{box-shadow:inset 7px 7px 14px var(--lo),inset -7px -7px 14px var(--hi)}
+nav{display:flex;justify-content:space-between;align-items:center;padding:30px 80px}
+.mark{font-weight:800;font-size:24px;letter-spacing:-.02em}
+nav a{color:var(--mute);text-decoration:none;font-size:16px;margin-left:32px}
+h1{padding:22px 80px 0;font-size:84px;line-height:.95;letter-spacing:-.04em;font-weight:800;max-width:1200px}
+h1 em{font-style:normal;color:var(--ac)}
+.deck{display:grid;grid-template-columns:1fr 470px;gap:44px;padding:52px 80px 0}
+.slab{border-radius:34px;padding:34px 36px}
+.slab small{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.slab code{display:block;font-family:"JetBrains Mono",monospace;font-size:27px;line-height:1.35;margin:16px 0 26px;font-weight:600}
+.slab code i{font-style:normal;color:var(--mute);font-weight:400}
+.copy{display:inline-block;border-radius:18px;padding:16px 30px;font-weight:800;font-size:18px;color:var(--ac)}
+.keys{display:flex;gap:22px;margin-top:34px}
+.key{border-radius:18px;padding:16px 22px;font-family:"JetBrains Mono";font-size:15px;min-width:200px}
+.key span{display:block;font-family:"Schibsted Grotesk";font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);margin-top:6px}
+.key.on{color:var(--ac);font-weight:600}
+.tray{border-radius:30px;padding:26px 28px;font-family:"JetBrains Mono";font-size:14px;line-height:1.75;height:430px}
+.tray .c{color:var(--mute)}.tray b{color:var(--ac);font-weight:600}
+.tray .row{display:flex;justify-content:space-between}
+</style></head><body>
+<nav><div class="mark">exhume</div><div><a href="#">What it finds</a><a href="#">Roadmap</a><a href="#">GitHub</a></div></nav>
+<h1>One command to find the files <em>your workspace forgot.</em></h1>
+<section class="deck">
+  <div>
+    <div class="slab up"><small>Works today · builds from source with Rust</small>
+      <code><i>$</i> cargo install --git https://github.com/salmansheri/exhume exhume-cli</code>
+      <span class="copy up">Copy command</span></div>
+    <div class="keys">
+      <div class="key on in">cargo --git<span>Available now</span></div>
+      <div class="key up">npm i -g exhume<span>After first release</span></div>
+      <div class="key up">cargo install exhume-cli<span>After first release</span></div>
+    </div>
+  </div>
+  <div class="tray in">
+    <div class="c">$ exhume tests/fixtures/single-package</div>
+    <div>single-package (.)</div>
+    <div class="c">&nbsp;&nbsp;Unused Files (4)</div>
+    <div class="row"><span>&nbsp;&nbsp;&nbsp;&nbsp;src/Widget.tsx:1:1</span><b>high</b></div>
+    <div class="row"><span>&nbsp;&nbsp;&nbsp;&nbsp;src/dead-helper.ts:1:1</span><b>high</b></div>
+    <div class="row"><span>&nbsp;&nbsp;&nbsp;&nbsp;src/dead.ts:1:1</span><b>high</b></div>
+    <div class="row"><span>&nbsp;&nbsp;&nbsp;&nbsp;src/legacy.cjs:1:1</span><b>high</b></div>
+    <br><div>4 findings (4 high, 0 medium, 0 low)</div>
+    <div class="c">$ echo $?</div><div><b>1</b></div>
+  </div>
+</section>
+</body></html>

@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>exhume · find the files nothing imports</title>
+<script>
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem("exhume-theme"); } catch (e) {}
+    if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    document.documentElement.dataset.theme = t;
+    document.documentElement.classList.add("js");
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root, [data-theme="light"] {
+  --ground: #d9dde0;
+  --hi: #f8fafb;
+  --lo: #aeb5bb;
+  --ink: #1b2024;
+  --mute: #464f57;
+  --rule: #c9cfd4;
+  --accent: #0d6152;
+  --accent-ink: #f3faf8;
+  --select: #b9dcd4;
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  --ground: #242a2f;
+  --hi: #2f373d;
+  --lo: #161a1d;
+  --ink: #e7ecef;
+  --mute: #a5b0b8;
+  --rule: #1d2226;
+  --accent: #46c9ad;
+  --accent-ink: #0d1f1b;
+  --select: #2c5c52;
+  color-scheme: dark;
+}
+:root {
+  --raise: 8px 8px 18px var(--lo), -8px -8px 18px var(--hi), inset 0 0 0 var(--lo), inset 0 0 0 var(--hi);
+  --raise-sm: 5px 5px 11px var(--lo), -5px -5px 11px var(--hi), inset 0 0 0 var(--lo), inset 0 0 0 var(--hi);
+  --press: 0 0 0 var(--lo), 0 0 0 var(--hi), inset 5px 5px 10px var(--lo), inset -5px -5px 10px var(--hi);
+  --press-deep: 0 0 0 var(--lo), 0 0 0 var(--hi), inset 10px 10px 22px var(--lo), inset -10px -10px 22px var(--hi);
+  --sans: "Schibsted Grotesk", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  --ease: cubic-bezier(.16, 1, .3, 1);
+  --gutter: clamp(16px, 5vw, 72px);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: var(--ground); scrollbar-color: var(--lo) var(--ground); }
+body { background: var(--ground); color: var(--ink); font-family: var(--sans); font-size: 18px; line-height: 1.5; -webkit-font-smoothing: antialiased; transition: background-color .4s var(--ease), color .4s var(--ease); }
+::selection { background: var(--select); color: var(--ink); }
+a { color: inherit; text-underline-offset: .2em; text-decoration-thickness: 1px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 12px; }
+code, pre, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 0 var(--gutter); }
+
+/* nav */
+nav { display: flex; align-items: center; justify-content: space-between; padding-block: 28px; }
+.mark { font-weight: 800; font-size: 24px; letter-spacing: -.03em; text-decoration: none; }
+.links { display: flex; align-items: center; gap: clamp(16px, 3vw, 32px); font-size: 16px; color: var(--mute); }
+.links a { text-decoration: none; }
+.links a:hover { color: var(--ink); }
+.toggle { width: 64px; height: 34px; border: 0; border-radius: 20px; background: var(--ground); box-shadow: var(--press); cursor: pointer; position: relative; color: var(--ink); }
+.toggle span { position: absolute; top: 4px; left: 4px; width: 26px; height: 26px; border-radius: 50%; background: var(--ground); box-shadow: var(--raise-sm); display: grid; place-items: center; transition: transform .45s var(--ease); }
+[data-theme="dark"] .toggle span { transform: translateX(30px); }
+.toggle svg { width: 15px; height: 15px; }
+.toggle .moon, [data-theme="dark"] .toggle .sun { display: none; }
+[data-theme="dark"] .toggle .moon { display: block; }
+
+/* hero / surface */
+.surface { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 520px); gap: clamp(32px, 5vw, 72px); align-items: end; padding-block: clamp(24px, 6vh, 64px) 0; }
+h1 { font-size: clamp(42px, 5.4vw, 78px); line-height: .98; max-width: 13ch; letter-spacing: -.04em; font-weight: 800; }
+h1 em { font-style: normal; color: var(--accent); }
+.lede { font-size: clamp(18px, 1.5vw, 21px); color: var(--mute); max-width: 34ch; margin-top: 22px; }
+
+.install { border-radius: 26px; padding: 22px 22px 22px 26px; background: var(--ground); box-shadow: var(--raise); }
+.install p { font-size: 14px; color: var(--mute); margin-bottom: 12px; }
+.install .row { display: flex; gap: 14px; align-items: center; }
+.install code { flex: 1; min-width: 0; font-size: 15px; line-height: 1.55; padding: 14px 16px; border-radius: 14px; box-shadow: var(--press); overflow-wrap: anywhere; }
+.install code i { font-style: normal; color: var(--mute); user-select: none; }
+.copy { flex: none; border: 0; border-radius: 16px; padding: 14px 20px; font: 700 16px var(--sans); color: var(--accent); background: var(--ground); box-shadow: var(--raise-sm); cursor: pointer; display: inline-flex; gap: 8px; align-items: center; transition: box-shadow .25s var(--ease), color .25s; }
+.copy:hover { color: var(--ink); }
+.copy:active, .copy[data-state="copied"] { box-shadow: var(--press); }
+.copy svg { width: 18px; height: 18px; }
+.install .later { margin: 14px 0 0; font-size: 14px; color: var(--mute); }
+
+/* the ground: strata */
+.ground { margin-top: clamp(32px, 4.5vh, 52px); border-radius: 44px; padding: clamp(18px, 3vw, 36px); box-shadow: var(--press-deep); }
+.ground-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 0 8px 18px; font-size: 15px; color: var(--mute); }
+.scan { flex: none; white-space: nowrap; border: 0; border-radius: 14px; padding: 10px 18px; font: 700 15px var(--sans); color: var(--ink); background: var(--ground); box-shadow: var(--raise-sm); cursor: pointer; display: inline-flex; gap: 8px; align-items: center; transition: box-shadow .25s var(--ease); }
+.scan:active, .scan[aria-busy="true"] { box-shadow: var(--press); }
+.scan svg { width: 16px; height: 16px; }
+.stratum { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 24px; align-items: center; padding: 22px 8px; border-top: 2px solid var(--rule); }
+.pkg { font: 600 16px var(--mono); }
+.pkg span { display: block; font-weight: 400; font-size: 14px; color: var(--mute); margin-top: 2px; }
+.files { display: flex; flex-wrap: wrap; gap: 16px 18px; list-style: none; }
+.file { max-width: 100%; overflow-wrap: anywhere; font: 400 15px var(--mono); color: var(--mute); padding: 12px 16px; border-radius: 14px; background: var(--ground); box-shadow: var(--press); display: inline-flex; align-items: center; gap: 14px; transition: box-shadow .7s var(--ease), transform .7s var(--ease), color .4s; }
+.file .conf { font-weight: 600; font-size: 13px; color: var(--accent); opacity: 0; transition: opacity .4s .25s; }
+.file.dead.up { color: var(--ink); font-weight: 600; box-shadow: var(--raise); transform: translateY(-6px); }
+.file.dead.up .conf { opacity: 1; }
+html:not(.js) .file.dead { color: var(--ink); font-weight: 600; box-shadow: var(--raise); transform: translateY(-6px); }
+html:not(.js) .file.dead .conf { opacity: 1; }
+.verdict { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; padding: 22px 8px 4px; border-top: 2px solid var(--rule); font: 400 16px var(--mono); transition: opacity .5s var(--ease); }
+.js .verdict[data-pending] { opacity: 0; }
+.keycap { font: 600 15px var(--mono); padding: 10px 18px; border-radius: 14px; background: var(--ground); box-shadow: var(--raise-sm); }
+.keycap b { color: var(--accent); }
+
+/* lower strata */
+section.layer { padding-block: clamp(80px, 12vh, 140px) 0; }
+h2 { font-size: clamp(34px, 4.2vw, 56px); line-height: 1; letter-spacing: -.035em; font-weight: 800; max-width: 18ch; }
+.layer > .wrap > p.sub { font-size: 19px; color: var(--mute); max-width: 60ch; margin-top: 18px; }
+
+.walk { margin-top: 48px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: 36px; box-shadow: var(--raise); overflow: hidden; }
+.walk div { padding: 32px clamp(20px, 2.4vw, 36px) 36px; }
+.walk div + div { border-left: 2px solid var(--rule); }
+.walk h3 { font-size: 22px; letter-spacing: -.02em; margin-bottom: 10px; }
+.walk p { color: var(--mute); font-size: 17px; }
+.walk code { font-size: 15px; color: var(--ink); }
+.managers { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 36px; list-style: none; }
+.managers li { font: 400 15px var(--mono); padding: 10px 16px; border-radius: 12px; box-shadow: var(--press); }
+
+.exits { margin-top: 48px; display: grid; gap: 22px; }
+.exit { display: grid; grid-template-columns: 96px minmax(0, 260px) minmax(0, 1fr); gap: 28px; align-items: center; padding: 22px 26px; border-radius: 26px; box-shadow: var(--press); }
+.exit .code { width: 72px; height: 72px; border-radius: 20px; display: grid; place-items: center; font: 600 32px var(--mono); box-shadow: var(--raise-sm); }
+.exit .code.one { color: var(--accent); }
+.exit h3 { font-size: 21px; letter-spacing: -.02em; }
+.exit h3 + p { color: var(--mute); font-size: 16px; margin-top: 4px; }
+.exit pre { font-size: 14px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); }
+.exit pre .c { color: var(--mute); }
+
+.ci { margin-top: 28px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: start; }
+.ci pre { font-size: 14px; line-height: 1.7; padding: 26px 28px; border-radius: 26px; box-shadow: var(--press); overflow-x: auto; }
+.ci pre .c { color: var(--mute); }
+.ci p { color: var(--mute); font-size: 17px; max-width: 46ch; padding-top: 8px; }
+.ci p + p { margin-top: 14px; }
+
+.road { margin-top: 48px; border-radius: 36px; padding: clamp(24px, 3vw, 40px); border: 2px dashed var(--lo); }
+.road ul { list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 48px; }
+.road li { padding: 18px 0; border-bottom: 2px solid var(--rule); display: flex; gap: 18px; align-items: baseline; justify-content: space-between; }
+.road li strong { font-size: 18px; letter-spacing: -.01em; }
+.road li span { font-size: 15px; color: var(--mute); text-align: right; }
+
+.close { padding-block: clamp(96px, 14vh, 160px) 48px; }
+.close .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 560px); gap: 48px; align-items: center; }
+footer { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-block: 56px 40px; margin-top: 72px; border-top: 2px solid var(--rule); color: var(--mute); font-size: 15px; }
+
+@media (max-width: 960px) {
+  .surface, .close .grid, .ci { grid-template-columns: 1fr; }
+  .walk { grid-template-columns: 1fr; }
+  .walk div + div { border-left: 0; border-top: 2px solid var(--rule); }
+  .exit { grid-template-columns: 72px 1fr; }
+  .exit pre { grid-column: 1 / -1; }
+  .road ul { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  body { font-size: 17px; }
+  .links a:not(.gh) { display: none; }
+  .stratum { grid-template-columns: minmax(0, 1fr); gap: 14px; padding-inline: 4px; }
+  .ground-head { flex-direction: column; align-items: flex-start; padding-inline: 4px; }
+  .ground { padding: 16px 14px; }
+  .file { padding: 10px 12px; gap: 10px; }
+  .install .row { flex-direction: column; align-items: stretch; }
+  .copy { justify-content: center; }
+  .ground { border-radius: 26px; }
+  .file { font-size: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0s !important; transition-delay: 0s !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav aria-label="Main">
+    <a class="mark" href="#">exhume</a>
+    <div class="links">
+      <a href="#how">How it reads a workspace</a>
+      <a href="#ci">CI</a>
+      <a href="#roadmap">Roadmap</a>
+      <a class="gh" href="https://github.com/salmansheri/exhume">GitHub</a>
+      <button class="toggle" type="button" id="theme" aria-label="Switch to dark theme">
+        <span>
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg>
+        </span>
+      </button>
+    </div>
+  </nav>
+
+  <header class="surface">
+    <div>
+      <h1>Dig up the files <em>nothing imports.</em></h1>
+      <p class="lede">exhume walks your JS/TS workspace from its entry points and reports every file it never reaches. Across every package, in one pass.</p>
+    </div>
+    <div class="install">
+      <p>Install from source today (needs Rust)</p>
+      <div class="row">
+        <code id="cmd"><i>$ </i>cargo install --git https://github.com/salmansheri/exhume exhume-cli</code>
+        <button class="copy" type="button" data-copy="cargo install --git https://github.com/salmansheri/exhume exhume-cli">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          <span>Copy</span>
+        </button>
+      </div>
+      <p class="later">npm and crates.io packages arrive with the first release.</p>
+    </div>
+  </header>
+
+  <section class="ground" aria-labelledby="ground-label">
+    <div class="ground-head">
+      <span id="ground-label" class="mono">$ exhume tests/fixtures/pnpm-monorepo</span>
+      <button class="scan" type="button" id="scan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+        Scan again
+      </button>
+    </div>
+    <div class="stratum">
+      <div class="pkg">web<span>apps/web</span></div>
+      <ul class="files">
+        <li class="file">src/index.ts</li>
+        <li class="file dead">apps/web/src/dead.ts:1:1 <span class="conf">high</span></li>
+      </ul>
+    </div>
+    <div class="stratum">
+      <div class="pkg">@acme/ui<span>packages/ui</span></div>
+      <ul class="files">
+        <li class="file">src/index.ts</li>
+        <li class="file dead">packages/ui/src/internal.ts:1:1 <span class="conf">high</span></li>
+        <li class="file dead">packages/ui/src/unused.ts:1:1 <span class="conf">high</span></li>
+      </ul>
+    </div>
+    <div class="stratum">
+      <div class="pkg">@acme/utils<span>packages/utils</span></div>
+      <ul class="files">
+        <li class="file">index.ts</li>
+        <li class="file">src/format.ts</li>
+        <li class="file">src/extra.ts</li>
+        <li class="file dead">packages/utils/src/stale.ts:1:1 <span class="conf">high</span></li>
+      </ul>
+    </div>
+    <div class="verdict" id="verdict" data-pending aria-live="polite">
+      <span>4 findings (4 high, 0 medium, 0 low)</span>
+      <span class="keycap">exit <b>1</b></span>
+    </div>
+  </section>
+</div>
+
+<section class="layer" id="how">
+  <div class="wrap">
+    <h2>It follows imports. Whatever it never reaches is dead.</h2>
+    <p class="sub">No guessing from file names or timestamps. exhume builds the import graph the way your bundler would, then reports the files left outside it.</p>
+    <div class="walk">
+      <div><h3>Start at the entry points</h3><p>Each Workspace Package's manifest names where its code begins: <code>main</code>, <code>exports</code>, <code>bin</code>.</p></div>
+      <div><h3>Follow every import</h3><p>Relative paths, imports between Workspace Packages, and tsconfig <code>paths</code> aliases all resolve to real files.</p></div>
+      <div><h3>Report what's left</h3><p>Files no path reaches become Unused Files, grouped by package with the exact location.</p></div>
+    </div>
+    <ul class="managers" aria-label="Supported workspaces">
+      <li>single package</li><li>pnpm workspaces</li><li>npm workspaces</li><li>yarn workspaces</li><li>bun workspaces</li><li>tsconfig paths</li>
+    </ul>
+  </div>
+</section>
+
+<section class="layer" id="ci">
+  <div class="wrap">
+    <h2>Three exit codes. Nothing to parse.</h2>
+    <p class="sub">exhume runs unattended. The exit code alone tells your pipeline whether to pass, fail, or flag a broken setup. Every line below is real output from exhume's test fixtures.</p>
+    <div class="exits">
+      <div class="exit">
+        <div class="code">0</div>
+        <div><h3>Clean</h3><p>Every file is reachable.</p></div>
+        <pre><span class="c">$ exhume tests/fixtures/clean-package</span>
+0 findings (0 high, 0 medium, 0 low)</pre>
+      </div>
+      <div class="exit">
+        <div class="code one">1</div>
+        <div><h3>Findings</h3><p>Dead files exist. Fail the check.</p></div>
+        <pre><span class="c">$ exhume tests/fixtures/single-package</span>
+single-package (.)
+  Unused Files (4)
+    src/Widget.tsx:1:1        high
+    src/dead-helper.ts:1:1    high
+    src/dead.ts:1:1           high
+    src/legacy.cjs:1:1        high
+
+4 findings (4 high, 0 medium, 0 low)</pre>
+      </div>
+      <div class="exit">
+        <div class="code">2</div>
+        <div><h3>Tool error</h3><p>exhume couldn't scan, and says why.</p></div>
+        <pre><span class="c">$ exhume tests/fixtures/yarn-pnp</span>
+exhume: Yarn Plug'n'Play (PnP) is not supported; set `nodeLinker: node-modules` in .yarnrc.yml and reinstall</pre>
+      </div>
+    </div>
+    <div class="ci">
+      <pre aria-label="GitHub Actions step"><span class="c"># .github/workflows/exhume.yml</span>
+- name: Install exhume
+  run: cargo install --git https://github.com/salmansheri/exhume exhume-cli
+
+- name: Find dead files
+  run: exhume .</pre>
+      <div>
+        <p>The step fails on exit 1 and the log shows exactly which files to delete.</p>
+        <p>exhume never modifies your workspace. It reports, you decide.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="layer" id="roadmap">
+  <div class="wrap">
+    <h2>On the roadmap, not shipped</h2>
+    <p class="sub">Unused Files is what works today. The rest of v1 is specified in the open and tracked issue by issue.</p>
+    <div class="road">
+      <ul>
+        <li><strong>Unused Exports, Dependencies and env vars</strong><span>v1</span></li>
+        <li><strong>Confidence with coded Reasons</strong><span>v1</span></li>
+        <li><strong>Baselines for repos with existing dead code</strong><span>v1</span></li>
+        <li><strong><code>--json</code> output and <code>--fail-on</code></strong><span>v1</span></li>
+        <li><strong>Verified fixer that runs your build and tests</strong><span>later</span></li>
+        <li><strong>Tombstone Report pull requests</strong><span>later</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="close">
+  <div class="wrap">
+    <div class="grid">
+      <h2>Run it on your monorepo.</h2>
+      <div class="install">
+        <p>Install from source today (needs Rust)</p>
+        <div class="row">
+          <code><i>$ </i>cargo install --git https://github.com/salmansheri/exhume exhume-cli</code>
+          <button class="copy" type="button" data-copy="cargo install --git https://github.com/salmansheri/exhume exhume-cli">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+            <span>Copy</span>
+          </button>
+        </div>
+        <p class="later">Then run <code>exhume</code> at the workspace root.</p>
+      </div>
+    </div>
+    <footer>
+      <span>exhume · MIT OR Apache-2.0</span>
+      <a href="https://github.com/salmansheri/exhume">github.com/salmansheri/exhume</a>
+    </footer>
+  </div>
+</section>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById("theme");
+    function label() { btn.setAttribute("aria-label", root.dataset.theme === "dark" ? "Switch to light theme" : "Switch to dark theme"); }
+    label();
+    btn.addEventListener("click", function () {
+      root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+      try { localStorage.setItem("exhume-theme", root.dataset.theme); } catch (e) {}
+      label();
+    });
+
+    document.querySelectorAll(".copy").forEach(function (b) {
+      var text = b.querySelector("span");
+      b.addEventListener("click", function () {
+        var done = function (msg) {
+          b.dataset.state = "copied"; text.textContent = msg;
+          setTimeout(function () { delete b.dataset.state; text.textContent = "Copy"; }, 1800);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(b.dataset.copy).then(function () { done("Copied"); }, function () { done("Select it"); });
+        } else { done("Select it"); }
+      });
+    });
+
+    var dead = Array.prototype.slice.call(document.querySelectorAll(".file.dead"));
+    var verdict = document.getElementById("verdict");
+    var scanBtn = document.getElementById("scan");
+    var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var timers = [];
+    function scan() {
+      timers.forEach(clearTimeout); timers = [];
+      dead.forEach(function (f) { f.classList.remove("up"); });
+      verdict.setAttribute("data-pending", "");
+      scanBtn.setAttribute("aria-busy", "true");
+      var step = reduce ? 0 : 420;
+      dead.forEach(function (f, i) { timers.push(setTimeout(function () { f.classList.add("up"); }, (reduce ? 0 : 500) + i * step)); });
+      timers.push(setTimeout(function () { verdict.removeAttribute("data-pending"); scanBtn.removeAttribute("aria-busy"); }, (reduce ? 0 : 700) + dead.length * step));
+    }
+    scanBtn.addEventListener("click", scan);
+    if ("IntersectionObserver" in window) {
+      var io = new IntersectionObserver(function (e) { if (e[0].isIntersecting) { scan(); io.disconnect(); } }, { rootMargin: "0px 0px -25% 0px" });
+      io.observe(document.querySelector(".ground"));
+    } else { scan(); }
+  })();
+</script>
+</body>
+</html>

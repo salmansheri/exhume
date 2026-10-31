@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--g:#d9dde0;--hi:#f7f9fb;--lo:#b3b9bf;--ink:#1c2125;--mute:#4a535b;--ac:#12705f}
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;background:var(--g);color:var(--ink);font-family:"Schibsted Grotesk",sans-serif}
+.up{box-shadow:9px 9px 20px var(--lo),-9px -9px 20px var(--hi)}
+.in{box-shadow:inset 7px 7px 14px var(--lo),inset -7px -7px 14px var(--hi)}
+nav{display:flex;justify-content:space-between;align-items:center;padding:32px 72px}
+.mark{font-weight:800;font-size:24px;letter-spacing:-.02em}
+nav a{color:var(--mute);text-decoration:none;font-size:16px;margin-left:32px}
+.surface{padding:28px 72px 0;display:flex;align-items:flex-end;justify-content:space-between;gap:48px}
+h1{font-size:76px;line-height:.98;letter-spacing:-.035em;font-weight:800;max-width:780px}
+h1 em{font-style:normal;color:var(--ac)}
+.lede{font-size:20px;color:var(--mute);max-width:560px;margin-top:20px;line-height:1.45}
+.cmd{border-radius:22px;padding:22px 26px;font-family:"JetBrains Mono",monospace;font-size:17px;width:520px}
+.cmd small{display:block;font-family:"Schibsted Grotesk";font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin-bottom:10px}
+.cmd .row{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.copy{border-radius:14px;padding:10px 18px;font-family:"Schibsted Grotesk";font-weight:700;font-size:15px}
+.ground{margin:44px 40px 0;border-radius:36px 36px 0 0;padding:26px 32px 0;height:420px}
+.stratum{display:grid;grid-template-columns:200px 1fr;align-items:center;gap:24px;padding:18px 8px;border-bottom:2px solid #cfd4d8}
+.stratum:last-child{border:0}
+.pkg{font-family:"JetBrains Mono";font-size:15px;font-weight:600}
+.pkg span{display:block;color:var(--mute);font-weight:400;font-size:13px;margin-top:4px}
+.files{display:flex;gap:16px;flex-wrap:wrap}
+.f{border-radius:14px;padding:12px 16px;font-family:"JetBrains Mono";font-size:14px;color:var(--mute)}
+.f.dead{color:var(--ink);transform:translateY(-10px);background:var(--g)}
+.f.dead b{color:var(--ac);font-weight:600;margin-left:12px}
+.depth{position:absolute;right:56px;bottom:40px;font-family:"JetBrains Mono";font-size:13px;color:var(--mute)}
+</style></head><body>
+<nav><div class="mark">exhume</div><div><a href="#">How it reads a workspace</a><a href="#">Roadmap</a><a href="#">GitHub</a></div></nav>
+<section class="surface">
+  <div>
+    <h1>Dig up the files <em>nothing imports.</em></h1>
+    <p class="lede">exhume walks your JS/TS workspace from its entry points and reports every file it never reaches, across pnpm, npm, yarn and bun workspaces.</p>
+  </div>
+  <div class="cmd up"><small>Install from source today</small>
+    <div class="row"><code>cargo install --git https://github.com/salmansheri/exhume exhume-cli</code><span class="copy up">Copy</span></div>
+  </div>
+</section>
+<section class="ground in">
+  <div class="stratum"><div class="pkg">web<span>apps/web</span></div>
+    <div class="files"><span class="f in">src/index.ts</span><span class="f dead up">src/dead.ts<b>high</b></span></div></div>
+  <div class="stratum"><div class="pkg">@acme/ui<span>packages/ui</span></div>
+    <div class="files"><span class="f in">src/index.ts</span><span class="f dead up">src/internal.ts<b>high</b></span><span class="f dead up">src/unused.ts<b>high</b></span></div></div>
+  <div class="stratum"><div class="pkg">@acme/utils<span>packages/utils</span></div>
+    <div class="files"><span class="f in">index.ts</span><span class="f in">src/format.ts</span><span class="f in">src/extra.ts</span><span class="f dead up">src/stale.ts<b>high</b></span></div></div>
+</section>
+<div class="depth">fixtures/pnpm-monorepo · 4 findings (4 high, 0 medium, 0 low) · exit 1</div>
+</body></html>

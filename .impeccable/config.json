@@ -1,0 +1,42 @@
+{
+  "hook": {
+    "enabled": true,
+    "limits": {
+      "maxFindings": 5,
+      "maxChars": 8000
+    }
+  },
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "nested-cards",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/report-well.html"
+        ],
+        "createdAt": "2026-10-31T16:44:18.383Z",
+        "reason": "Agent: unchosen decision-round sketch, never shipped"
+      },
+      {
+        "rule": "oversized-h1",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/install-keypad.html"
+        ],
+        "createdAt": "2026-10-31T16:44:18.390Z",
+        "reason": "Agent: unchosen decision-round sketch, never shipped"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/design/landing.html"
+        ],
+        "createdAt": "2026-10-31T16:56:15.919Z",
+        "reason": "Agent: .road has clamp(24px,3vw,40px) padding; .stratum/.verdict text aligns with a top rule, not a box edge"
+      }
+    ]
+  }
+}

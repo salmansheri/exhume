@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "exhume-landing",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "--cwd", "exhume-landing", "dev"],
+      "port": 3000
+    }
+  ]
+}

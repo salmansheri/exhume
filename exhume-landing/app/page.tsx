@@ -1,69 +1,185 @@
-import Image from "next/image";
+import { DigSite } from "./components/dig-site";
+import { InstallCommand } from "./components/install-command";
+import { ThemeSwitch } from "./components/theme-switch";
+import { exits, monorepo } from "./fixtures";
+
+const REPO = "https://github.com/salmansheri/exhume";
+
+const roadmap = [
+  { item: "Unused Exports, Dependencies and env vars", when: "v1" },
+  { item: "Confidence with coded Reasons", when: "v1" },
+  { item: "Baselines for repos with existing dead code", when: "v1" },
+  { item: <><code>--json</code> output and <code>--fail-on</code></>, key: "json", when: "v1" },
+  { item: "Verified fixer that runs your build and tests", when: "later" },
+  { item: "Tombstone Report pull requests", when: "later" },
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <>
+      <div className="wrap">
+        <nav className="nav" aria-label="Main">
+          <a className="wordmark" href="#">
+            exhume
+          </a>
+          <div className="nav-links">
+            <a href="#how">How it reads a workspace</a>
+            <a href="#ci">CI</a>
+            <a href="#roadmap">Roadmap</a>
+            <a className="nav-gh" href={REPO}>
+              GitHub
+            </a>
+            <ThemeSwitch />
+          </div>
+        </nav>
+
+        <main>
+          <header className="surface">
+            <div>
+              <h1 className="display">
+                Dig up the files <em>nothing imports.</em>
+              </h1>
+              <p className="lede">
+                exhume walks your JS/TS workspace from its entry points and reports every file it never reaches.
+                Across every package, in one pass.
+              </p>
+            </div>
+            <InstallCommand note="npm and crates.io packages arrive with the first release." />
+          </header>
+
+          <DigSite {...monorepo} />
+        </main>
+      </div>
+
+      <section className="layer" id="how" aria-labelledby="how-title">
+        <div className="wrap">
+          <h2 className="headline" id="how-title">
+            It follows imports. Whatever it never reaches is dead.
+          </h2>
+          <p className="sub">
+            No guessing from file names or timestamps. exhume builds the import graph the way your bundler would, then
+            reports the files left outside it.
           </p>
+          <div className="walk">
+            <div>
+              <h3 className="title">Start at the entry points</h3>
+              <p>
+                Each Workspace Package&apos;s manifest names where its code begins: <code>main</code>,{" "}
+                <code>exports</code>, <code>bin</code>.
+              </p>
+            </div>
+            <div>
+              <h3 className="title">Follow every import</h3>
+              <p>
+                Relative paths, imports between Workspace Packages, and tsconfig <code>paths</code> aliases all resolve
+                to real files.
+              </p>
+            </div>
+            <div>
+              <h3 className="title">Report what&apos;s left</h3>
+              <p>Files no path reaches become Unused Files, grouped by package with the exact location.</p>
+            </div>
+          </div>
+          <ul className="chips" aria-label="Supported workspaces">
+            <li>single package</li>
+            <li>pnpm workspaces</li>
+            <li>npm workspaces</li>
+            <li>yarn workspaces</li>
+            <li>bun workspaces</li>
+            <li>tsconfig paths</li>
+          </ul>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+      </section>
+
+      <section className="layer" id="ci" aria-labelledby="ci-title">
+        <div className="wrap">
+          <h2 className="headline" id="ci-title">
+            Three exit codes. Nothing to parse.
+          </h2>
+          <p className="sub">
+            exhume runs unattended. The exit code alone tells your pipeline whether to pass, fail, or flag a broken
+            setup. Every line below is real output from exhume&apos;s test fixtures.
+          </p>
+          <div className="exits">
+            {exits.map((exit) => (
+              <div className="exit" key={exit.code}>
+                <div className="exit-code" data-findings={exit.code === 1 ? "" : undefined} aria-label={`Exit code ${exit.code}`}>
+                  {exit.code}
+                </div>
+                <div>
+                  <h3 className="title">{exit.title}</h3>
+                  <p>{exit.meaning}</p>
+                </div>
+                <pre className="output" data-wrap={exit.wrap ? "" : undefined} tabIndex={0} aria-label={`Output of ${exit.command}`}>
+                  <span className="cmd">$ {exit.command}</span>
+                  {"\n"}
+                  {exit.output}
+                </pre>
+              </div>
+            ))}
+          </div>
+          <div className="ci">
+            <pre tabIndex={0} aria-label="GitHub Actions steps">
+              <span className="cmd"># .github/workflows/exhume.yml</span>
+              {`
+- name: Install exhume
+  run: >-
+    cargo install --git
+    ${REPO}
+    exhume-cli
+
+- name: Find dead files
+  run: exhume .`}
+            </pre>
+            <div>
+              <p>The step fails on exit 1 and the log shows exactly which files to delete.</p>
+              <p>exhume never modifies your workspace. It reports, you decide.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="layer" id="roadmap" aria-labelledby="roadmap-title">
+        <div className="wrap">
+          <h2 className="headline" id="roadmap-title">
+            On the roadmap, not shipped
+          </h2>
+          <p className="sub">
+            Unused Files is what works today. The rest of v1 is specified in the open and tracked issue by issue.
+          </p>
+          <div className="road">
+            <ul>
+              {roadmap.map((entry) => (
+                <li key={entry.key ?? String(entry.item)}>
+                  <strong>{entry.item}</strong>
+                  <span>{entry.when}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section className="close" aria-labelledby="close-title">
+        <div className="wrap">
+          <div className="close-grid">
+            <h2 className="headline" id="close-title">
+              Run it on your monorepo.
+            </h2>
+            <InstallCommand
+              note={
+                <>
+                  Then run <code>exhume</code> at the workspace root.
+                </>
+              }
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
+          <footer className="footer">
+            <span>exhume · MIT OR Apache-2.0</span>
+            <a href={REPO}>github.com/salmansheri/exhume</a>
+          </footer>
         </div>
-      </main>
-    </div>
+      </section>
+    </>
   );
 }
