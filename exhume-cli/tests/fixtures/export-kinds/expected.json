@@ -1,0 +1,6 @@
+[
+  {"kind": "unused-export", "package": "export-kinds", "path": "src/types.ts", "name": "Unused", "line": 4, "column": 13, "confidence": "high", "reasons": []},
+  {"kind": "unused-export", "package": "export-kinds", "path": "src/greeting.ts", "name": "farewell", "line": 4, "column": 14, "confidence": "high", "reasons": []},
+  {"kind": "unused-export", "package": "export-kinds", "path": "src/other.ts", "name": "default", "line": 2, "column": 8, "confidence": "high", "reasons": []},
+  {"kind": "unused-file", "package": "export-kinds", "path": "src/orphan.ts", "name": "src/orphan.ts", "line": 1, "column": 1, "confidence": "high", "reasons": []}
+]

@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Context;
 
-use super::{Ecosystem, WorkspacePackage};
+use super::{Ecosystem, Module, WorkspacePackage};
 use manifest::Manifest;
 
 const SOURCE_EXTENSIONS: &[&str] = &["js", "jsx", "mjs", "cjs", "ts", "tsx", "mts", "cts"];
@@ -96,10 +96,10 @@ impl Ecosystem for JsEcosystem {
             .collect())
     }
 
-    fn imports(&self, file: &Path) -> anyhow::Result<Vec<String>> {
+    fn module(&self, file: &Path) -> anyhow::Result<Module> {
         let source =
             std::fs::read_to_string(file).with_context(|| format!("reading {}", file.display()))?;
-        Ok(parse::imports(file, &source))
+        Ok(parse::module(file, &source))
     }
 
     fn resolve(&self, from: &Path, specifier: &str) -> Option<PathBuf> {

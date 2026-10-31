@@ -1,14 +1,16 @@
 pub mod ecosystem;
+mod exports;
 pub mod finding;
 pub mod report;
 mod walk;
 
-use std::collections::{BTreeSet, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
 
 use ecosystem::{Ecosystem, WorkspacePackage, js::JsEcosystem};
+use exports::ParsedFile;
 pub use finding::{Confidence, Finding, FindingKind, Reason, ReasonCode, Span};
 pub use report::{PackageReport, Report, Summary};
 
@@ -30,7 +32,7 @@ pub fn scan(root: &Path, _options: &Options) -> anyhow::Result<Report> {
     for package in packages {
         entry_points.extend(ecosystem.entry_points(package)?);
     }
-    let reachable = reachable_files(&ecosystem, entry_points, &sources)?;
+    let reachable = reachable_files(&ecosystem, entry_points.clone(), &sources)?;
 
     let mut reports: Vec<PackageReport> = packages
         .iter()
@@ -40,7 +42,7 @@ pub fn scan(root: &Path, _options: &Options) -> anyhow::Result<Report> {
             findings: Vec::new(),
         })
         .collect();
-    for file in sources.iter().filter(|file| !reachable.contains(*file)) {
+    for file in sources.iter().filter(|file| !reachable.contains_key(*file)) {
         let Some(owner) = owning_package(packages, file) else {
             continue;
         };
@@ -51,6 +53,19 @@ pub fn scan(root: &Path, _options: &Options) -> anyhow::Result<Report> {
             &path,
             &path,
             Span::FILE_START,
+        ));
+    }
+    let entry_points: HashSet<PathBuf> = entry_points.into_iter().collect();
+    for (file, export) in exports::unused(&reachable, &entry_points) {
+        let Some(owner) = owning_package(packages, file) else {
+            continue;
+        };
+        reports[owner].findings.push(Finding::new(
+            FindingKind::UnusedExport,
+            &packages[owner].name,
+            &relative(&root, file),
+            &export.name,
+            export.span,
         ));
     }
     Ok(Report::new(reports))
@@ -66,26 +81,32 @@ fn owning_package(packages: &[WorkspacePackage], file: &Path) -> Option<usize> {
         .map(|(index, _)| index)
 }
 
-/// Files reachable from the entry points by following imports between the workspace's sources.
+/// Source files reachable from the entry points by following imports between the workspace's
+/// sources, each parsed once.
 fn reachable_files(
     ecosystem: &dyn Ecosystem,
     entry_points: Vec<PathBuf>,
     sources: &BTreeSet<PathBuf>,
-) -> anyhow::Result<HashSet<PathBuf>> {
-    let mut reachable: HashSet<PathBuf> = HashSet::new();
+) -> anyhow::Result<HashMap<PathBuf, ParsedFile>> {
+    let mut reachable: HashMap<PathBuf, ParsedFile> = HashMap::new();
     let mut queue = entry_points;
     while let Some(file) = queue.pop() {
-        if !reachable.insert(file.clone()) || !ecosystem.is_source_file(&file) {
+        if reachable.contains_key(&file) || !ecosystem.is_source_file(&file) {
             continue;
         }
-        for specifier in ecosystem.imports(&file)? {
-            if let Some(target) = ecosystem.resolve(&file, &specifier)
+        let module = ecosystem.module(&file)?;
+        let mut resolved = HashMap::new();
+        for specifier in &module.specifiers {
+            if let Some(target) = ecosystem.resolve(&file, specifier)
                 && sources.contains(&target)
-                && !reachable.contains(&target)
             {
-                queue.push(target);
+                if !reachable.contains_key(&target) {
+                    queue.push(target.clone());
+                }
+                resolved.insert(specifier.clone(), target);
             }
         }
+        reachable.insert(file, ParsedFile { module, resolved });
     }
     Ok(reachable)
 }

@@ -1,0 +1,5 @@
+[
+  {"kind": "unused-export", "package": "barrels", "path": "src/direct.ts", "name": "notUsed", "line": 2, "column": 14, "confidence": "high", "reasons": []},
+  {"kind": "unused-export", "package": "barrels", "path": "src/deep.ts", "name": "onlyReExported", "line": 2, "column": 14, "confidence": "high", "reasons": []},
+  {"kind": "unused-export", "package": "barrels", "path": "src/renames.ts", "name": "neverImported", "line": 2, "column": 14, "confidence": "high", "reasons": []}
+]

@@ -191,3 +191,15 @@ fn two_workspace_packages_with_the_same_name_are_rejected() {
         "{error:#}"
     );
 }
+
+#[test]
+fn exports_of_reachable_files_that_nothing_imports_are_unused_exports() {
+    let report = scan(&fixture("barrels"));
+    assert_expected("barrels", &report);
+}
+
+#[test]
+fn type_only_and_default_exports_are_used_and_reported_like_named_ones() {
+    let report = scan(&fixture("export-kinds"));
+    assert_expected("export-kinds", &report);
+}

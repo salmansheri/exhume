@@ -16,18 +16,21 @@ serialize_as_str!(FindingKind, Confidence);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum FindingKind {
     UnusedFile,
+    UnusedExport,
 }
 
 impl FindingKind {
     pub fn as_str(self) -> &'static str {
         match self {
             FindingKind::UnusedFile => "unused-file",
+            FindingKind::UnusedExport => "unused-export",
         }
     }
 
     pub fn heading(self) -> &'static str {
         match self {
             FindingKind::UnusedFile => "Unused Files",
+            FindingKind::UnusedExport => "Unused Exports",
         }
     }
 }
