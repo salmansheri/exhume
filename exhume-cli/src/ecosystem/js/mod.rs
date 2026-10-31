@@ -1,14 +1,15 @@
 mod manifest;
 mod parse;
 mod resolve;
+mod usage;
 mod workspace;
 
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 use anyhow::Context;
 
-use super::{Ecosystem, Module, WorkspacePackage};
+use super::{Ecosystem, Module, Resolution, WorkspacePackage};
 use manifest::Manifest;
 
 const SOURCE_EXTENSIONS: &[&str] = &["js", "jsx", "mjs", "cjs", "ts", "tsx", "mts", "cts"];
@@ -102,10 +103,25 @@ impl Ecosystem for JsEcosystem {
         Ok(parse::module(file, &source))
     }
 
-    fn resolve(&self, from: &Path, specifier: &str) -> Option<PathBuf> {
-        self.resolver
+    fn resolve(&self, from: &Path, specifier: &str) -> Resolution {
+        if let Some(file) = self
+            .resolver
             .resolve_from_file(from, specifier)
             .or_else(|| self.resolve_workspace_package(specifier))
+        {
+            return Resolution::File(file);
+        }
+        if let Some(dir) = relative_dir(from, specifier) {
+            return Resolution::Unresolved { dir: Some(dir) };
+        }
+        let (name, _) = split_package_specifier(specifier);
+        if is_package_name(name) || specifier.contains(':') {
+            Resolution::External
+        } else {
+            // `@/x`, `~/x` and `#x` can't name a package, so they're path aliases exhume
+            // couldn't follow.
+            Resolution::Unresolved { dir: None }
+        }
     }
 }
 
@@ -118,4 +134,41 @@ fn split_package_specifier(specifier: &str) -> (&str, &str) {
         .nth(name_segments - 1)
         .map_or(specifier.len(), |(i, _)| i);
     specifier.split_at(end)
+}
+
+/// Whether `name` could be an npm package name, `pkg` or `@scope/pkg`.
+fn is_package_name(name: &str) -> bool {
+    let valid = |part: &str| {
+        !part.is_empty()
+            && !part.starts_with(['.', '_', '~'])
+            && part
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '.' | '_' | '~'))
+    };
+    match name.strip_prefix('@') {
+        Some(scoped) => scoped
+            .split_once('/')
+            .is_some_and(|(scope, pkg)| valid(scope) && valid(pkg)),
+        None => valid(name),
+    }
+}
+
+/// The directory a relative specifier, or a prefix of one such as `./pages/item-`, points into.
+/// `None` for a bare specifier.
+fn relative_dir(from: &Path, specifier: &str) -> Option<PathBuf> {
+    if !(specifier.starts_with("./") || specifier.starts_with("../")) {
+        return None;
+    }
+    let dir = &specifier[..=specifier.rfind('/')?];
+    let mut resolved = from.parent()?.to_path_buf();
+    for component in Path::new(dir).components() {
+        match component {
+            Component::ParentDir => {
+                resolved.pop();
+            }
+            Component::Normal(part) => resolved.push(part),
+            _ => {}
+        }
+    }
+    Some(resolved)
 }

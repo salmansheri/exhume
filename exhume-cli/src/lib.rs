@@ -1,3 +1,4 @@
+mod blind_spots;
 pub mod ecosystem;
 mod exports;
 pub mod finding;
@@ -9,8 +10,9 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Context;
 
-use ecosystem::{Ecosystem, WorkspacePackage, js::JsEcosystem};
-use exports::ParsedFile;
+use blind_spots::BlindSpots;
+use ecosystem::{Ecosystem, Resolution, WorkspacePackage, js::JsEcosystem};
+use exports::{ParsedFile, UnresolvedImport};
 pub use finding::{Confidence, Finding, FindingKind, Reason, ReasonCode, Span};
 pub use report::{PackageReport, Report, Summary};
 
@@ -33,6 +35,11 @@ pub fn scan(root: &Path, _options: &Options) -> anyhow::Result<Report> {
         entry_points.extend(ecosystem.entry_points(package)?);
     }
     let reachable = reachable_files(&ecosystem, entry_points.clone(), &sources)?;
+    let blind_spots = BlindSpots::find(
+        &reachable,
+        |file| owning_package(packages, file),
+        |file| relative(&root, file),
+    );
 
     let mut reports: Vec<PackageReport> = packages
         .iter()
@@ -47,26 +54,32 @@ pub fn scan(root: &Path, _options: &Options) -> anyhow::Result<Report> {
             continue;
         };
         let path = relative(&root, file);
-        reports[owner].findings.push(Finding::new(
-            FindingKind::UnusedFile,
-            &packages[owner].name,
-            &path,
-            &path,
-            Span::FILE_START,
-        ));
+        reports[owner].findings.push(
+            Finding::new(
+                FindingKind::UnusedFile,
+                &packages[owner].name,
+                &path,
+                &path,
+                Span::FILE_START,
+            )
+            .lowered_by(blind_spots.reasons(file, owner)),
+        );
     }
     let entry_points: HashSet<PathBuf> = entry_points.into_iter().collect();
     for (file, export) in exports::unused(&reachable, &entry_points) {
         let Some(owner) = owning_package(packages, file) else {
             continue;
         };
-        reports[owner].findings.push(Finding::new(
-            FindingKind::UnusedExport,
-            &packages[owner].name,
-            &relative(&root, file),
-            &export.name,
-            export.span,
-        ));
+        reports[owner].findings.push(
+            Finding::new(
+                FindingKind::UnusedExport,
+                &packages[owner].name,
+                &relative(&root, file),
+                &export.name,
+                export.span,
+            )
+            .lowered_by(blind_spots.reasons(file, owner)),
+        );
     }
     Ok(Report::new(reports))
 }
@@ -96,17 +109,30 @@ fn reachable_files(
         }
         let module = ecosystem.module(&file)?;
         let mut resolved = HashMap::new();
+        let mut unresolved = Vec::new();
         for specifier in &module.specifiers {
-            if let Some(target) = ecosystem.resolve(&file, specifier)
-                && sources.contains(&target)
-            {
-                if !reachable.contains_key(&target) {
-                    queue.push(target.clone());
+            match ecosystem.resolve(&file, specifier) {
+                Resolution::File(target) if sources.contains(&target) => {
+                    if !reachable.contains_key(&target) {
+                        queue.push(target.clone());
+                    }
+                    resolved.insert(specifier.clone(), target);
                 }
-                resolved.insert(specifier.clone(), target);
+                Resolution::Unresolved { dir } => unresolved.push(UnresolvedImport {
+                    specifier: specifier.clone(),
+                    dir,
+                }),
+                Resolution::File(_) | Resolution::External => {}
             }
         }
-        reachable.insert(file, ParsedFile { module, resolved });
+        reachable.insert(
+            file,
+            ParsedFile {
+                module,
+                resolved,
+                unresolved,
+            },
+        );
     }
     Ok(reachable)
 }

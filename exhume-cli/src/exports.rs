@@ -9,11 +9,19 @@ use crate::ecosystem::{Export, ImportedName, Module, ReExport};
 pub(crate) struct ParsedFile {
     pub module: Module,
     pub resolved: HashMap<String, PathBuf>,
+    pub unresolved: Vec<UnresolvedImport>,
+}
+
+/// A specifier meant for a file of the workspace that leads nowhere.
+pub(crate) struct UnresolvedImport {
+    pub specifier: String,
+    /// Where the file it meant would be, or `None` for anywhere in the Workspace Package.
+    pub dir: Option<PathBuf>,
 }
 
 impl ParsedFile {
     /// The workspace source that `specifier` resolved to, if any.
-    fn target(&self, specifier: &str) -> Option<&Path> {
+    pub fn target(&self, specifier: &str) -> Option<&Path> {
         self.resolved.get(specifier).map(PathBuf::as_path)
     }
 }

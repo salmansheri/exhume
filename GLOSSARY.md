@@ -73,8 +73,12 @@ How safe a finding is to act on: High, Medium or Low. The fixer only acts on Hig
 _Avoid_: Score, severity, certainty
 
 **Reason**:
-A coded explanation of why a finding's confidence is lower than High, for example a namespace import that escapes, or an unparsed file next to it.
+A coded explanation of why a finding's confidence is lower than High, naming the blind spot behind it, for example a non-literal `import()` that may load the file.
 _Avoid_: Note, message, hint
+
+**Blind Spot**:
+A place where exhume can't see what is used, such as a CJS boundary, an unresolvable specifier or a non-literal dynamic import. The findings a blind spot could hide get a Reason and a confidence below High.
+_Avoid_: Unknown, gap, limitation
 
 **Unused Env Var**:
 A finding for an env var that is documented somewhere but never read by any source file.

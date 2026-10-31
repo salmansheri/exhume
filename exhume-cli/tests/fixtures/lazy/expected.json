@@ -1,0 +1,4 @@
+[
+  {"kind": "unused-export", "package": "lazy", "path": "src/page.ts", "name": "description", "line": 2, "column": 14, "confidence": "high", "reasons": []},
+  {"kind": "unused-export", "package": "lazy", "path": "src/render.ts", "name": "hydrate", "line": 2, "column": 14, "confidence": "high", "reasons": []}
+]

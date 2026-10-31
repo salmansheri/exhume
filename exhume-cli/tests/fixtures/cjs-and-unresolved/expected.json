@@ -1,0 +1,5 @@
+[
+  {"kind": "unused-export", "package": "cjs-and-unresolved", "path": "src/greet.ts", "name": "wave", "line": 2, "column": 14, "confidence": "high", "reasons": []},
+  {"kind": "unused-export", "package": "cjs-and-unresolved", "path": "src/format.ts", "name": "parse", "line": 2, "column": 14, "confidence": "medium", "reasons": ["cjs-boundary"]},
+  {"kind": "unused-file", "package": "cjs-and-unresolved", "path": "src/feature/moved/stale.ts", "name": "src/feature/moved/stale.ts", "line": 1, "column": 1, "confidence": "medium", "reasons": ["unresolvable-specifier"]}
+]

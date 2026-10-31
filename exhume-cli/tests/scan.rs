@@ -30,7 +30,7 @@ impl From<&Finding> for FindingRow {
                 .reasons
                 .iter()
                 .map(|r| {
-                    serde_json::to_value(&r.code)
+                    serde_json::to_value(r.code)
                         .unwrap()
                         .as_str()
                         .unwrap()
@@ -202,4 +202,34 @@ fn exports_of_reachable_files_that_nothing_imports_are_unused_exports() {
 fn type_only_and_default_exports_are_used_and_reported_like_named_ones() {
     let report = scan(&fixture("export-kinds"));
     assert_expected("export-kinds", &report);
+}
+
+#[test]
+fn namespace_member_access_counts_only_the_members_used_and_an_escaping_namespace_uses_all() {
+    let report = scan(&fixture("namespaces"));
+    assert_expected("namespaces", &report);
+}
+
+#[test]
+fn literal_require_and_dynamic_import_are_imports() {
+    let report = scan(&fixture("lazy"));
+    assert_expected("lazy", &report);
+}
+
+#[test]
+fn a_non_literal_dynamic_import_lowers_the_findings_it_could_load() {
+    let report = scan(&fixture("dynamic-imports"));
+    assert_expected("dynamic-imports", &report);
+}
+
+#[test]
+fn findings_behind_a_cjs_boundary_or_an_unresolvable_specifier_are_lowered() {
+    let report = scan(&fixture("cjs-and-unresolved"));
+    assert_expected("cjs-and-unresolved", &report);
+}
+
+#[test]
+fn an_unresolvable_path_alias_lowers_the_findings_of_its_package() {
+    let report = scan(&fixture("unresolved-alias"));
+    assert_expected("unresolved-alias", &report);
 }

@@ -53,11 +53,18 @@ impl Confidence {
 }
 
 /// Why a finding's confidence is below High. Codes are added as blind spots are recognised.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
 #[serde(rename_all = "kebab-case")]
-pub enum ReasonCode {}
+pub enum ReasonCode {
+    /// A non-literal `import()` or `require()` may load the file or use the export.
+    DynamicImport,
+    /// The module is loaded with `require()`, whose interop exhume can't follow exactly.
+    CjsBoundary,
+    /// A specifier names a file next to this one that doesn't exist, perhaps one exhume can't parse.
+    UnresolvableSpecifier,
+}
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
 pub struct Reason {
     pub code: ReasonCode,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -105,6 +112,16 @@ impl Finding {
             confidence: Confidence::High,
             reasons: Vec::new(),
         }
+    }
+
+    /// Records why exhume can't be sure of the finding, lowering it to at most Medium if there
+    /// is any reason at all.
+    pub fn lowered_by(mut self, reasons: Vec<Reason>) -> Self {
+        if !reasons.is_empty() {
+            self.confidence = self.confidence.min(Confidence::Medium);
+        }
+        self.reasons = reasons;
+        self
     }
 }
 

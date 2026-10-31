@@ -1,0 +1,5 @@
+[
+  {"kind": "unused-export", "package": "namespaces", "path": "src/math.ts", "name": "subtract", "line": 2, "column": 14, "confidence": "high", "reasons": []},
+  {"kind": "unused-export", "package": "namespaces", "path": "src/types.ts", "name": "Colour", "line": 2, "column": 13, "confidence": "high", "reasons": []},
+  {"kind": "unused-export", "package": "namespaces", "path": "src/picked.ts", "name": "two", "line": 2, "column": 14, "confidence": "high", "reasons": []}
+]

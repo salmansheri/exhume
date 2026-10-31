@@ -30,7 +30,19 @@ pub trait Ecosystem {
     /// What a source file imports and exports.
     fn module(&self, file: &Path) -> anyhow::Result<Module>;
 
-    fn resolve(&self, from: &Path, specifier: &str) -> Option<PathBuf>;
+    fn resolve(&self, from: &Path, specifier: &str) -> Resolution;
+}
+
+/// Where a specifier leads.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Resolution {
+    /// A file on disk, which may or may not be one of the workspace's sources.
+    File(PathBuf),
+    /// Outside the workspace, such as an installed or uninstalled package.
+    External,
+    /// Meant for a file of the workspace, but leads nowhere. Whatever it meant is under `dir`,
+    /// or anywhere in the importer's Workspace Package when `dir` is `None`.
+    Unresolved { dir: Option<PathBuf> },
 }
 
 /// What one source file imports and exports, as its ecosystem understands it.
@@ -42,6 +54,9 @@ pub struct Module {
     /// Exports declared in this file, as opposed to forwarded from another one.
     pub exports: Vec<Export>,
     pub re_exports: Vec<ReExport>,
+    pub opaque_imports: Vec<OpaqueImport>,
+    /// Specifiers loaded with CommonJS `require()`, whose interop exhume can't follow exactly.
+    pub required: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -76,4 +91,13 @@ pub enum ReExport {
     },
     /// `export * from`, which forwards every name except `default`.
     Star { specifier: String },
+}
+
+/// An import whose specifier can't be read statically, so it may load any file in reach.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OpaqueImport {
+    pub span: Span,
+    /// The directory every file it can load is under, when its specifier has a static start.
+    /// Otherwise it may load any file of its Workspace Package.
+    pub dir: Option<PathBuf>,
 }

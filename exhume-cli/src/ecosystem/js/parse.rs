@@ -1,4 +1,4 @@
-//! All oxc parser calls live here, so oxc API churn is contained to one file.
+//! All oxc parser calls live here and in usage.rs, so oxc API churn is contained to them.
 
 use std::collections::HashSet;
 use std::path::Path;
@@ -10,8 +10,11 @@ use oxc_syntax::module_record::{
     ExportEntry, ExportExportName, ExportImportName, ImportImportName,
 };
 
-use crate::ecosystem::{Export, Import, ImportedName, Module, ReExport};
+use crate::ecosystem::{Export, Import, ImportedName, Module, OpaqueImport, ReExport};
 use crate::finding::Span;
+
+use super::relative_dir;
+use super::usage::{self, LoadResult, NameUse};
 
 /// The static imports, re-exports and exports of a file.
 pub fn module(path: &Path, source: &str) -> Module {
@@ -28,19 +31,48 @@ pub fn module(path: &Path, source: &str) -> Module {
             Some((first, specifier.as_str().to_owned()))
         })
         .collect();
+    let file_use = usage::file_use(&parsed.program);
+    specifiers.extend(
+        file_use
+            .loads
+            .iter()
+            .map(|load| (load.start, load.specifier.clone())),
+    );
     specifiers.sort();
+    let mut seen = HashSet::new();
+    specifiers.retain(|(_, specifier)| seen.insert(specifier.clone()));
 
     let imports = record
         .import_entries
         .iter()
-        .map(|entry| Import {
-            specifier: entry.module_request.name.as_str().to_owned(),
-            name: match &entry.import_name {
-                ImportImportName::Name(name) => ImportedName::Name(name.name.as_str().to_owned()),
-                ImportImportName::Default(_) => ImportedName::Name("default".to_owned()),
-                ImportImportName::NamespaceObject => ImportedName::All,
-            },
+        .flat_map(|entry| {
+            let used = match &entry.import_name {
+                ImportImportName::Name(name) => {
+                    vec![ImportedName::Name(name.name.as_str().to_owned())]
+                }
+                ImportImportName::Default(_) => vec![ImportedName::Name("default".to_owned())],
+                ImportImportName::NamespaceObject => {
+                    used_members(file_use.names.get(entry.local_name.name.as_str()))
+                }
+            };
+            let specifier = entry.module_request.name.as_str();
+            used.into_iter().map(move |name| Import {
+                specifier: specifier.to_owned(),
+                name,
+            })
         })
+        .chain(file_use.loads.iter().flat_map(|load| {
+            let used = match &load.result {
+                LoadResult::Discarded => Vec::new(),
+                LoadResult::Members(members) => named(members),
+                LoadResult::Bound(name) => used_members(file_use.names.get(name)),
+                LoadResult::Escapes => vec![ImportedName::All],
+            };
+            used.into_iter().map(|name| Import {
+                specifier: load.specifier.clone(),
+                name,
+            })
+        }))
         .collect();
 
     let exports = record
@@ -79,6 +111,23 @@ pub fn module(path: &Path, source: &str) -> Module {
         imports,
         exports,
         re_exports: named.chain(stars).collect(),
+        opaque_imports: file_use
+            .opaque_loads
+            .iter()
+            .map(|load| OpaqueImport {
+                span: span_at(source, load.span),
+                dir: load
+                    .prefix
+                    .as_deref()
+                    .and_then(|prefix| relative_dir(path, prefix)),
+            })
+            .collect(),
+        required: file_use
+            .loads
+            .iter()
+            .filter(|load| load.require)
+            .map(|load| load.specifier.clone())
+            .collect(),
     }
 }
 
@@ -95,6 +144,23 @@ fn named_re_export(entry: &ExportEntry) -> Option<ReExport> {
         imported,
         exported: exported.to_owned(),
     })
+}
+
+/// What a namespace-like binding uses of its module: the members it reads, or everything
+/// once it escapes. An unused binding uses nothing.
+fn used_members(name_use: Option<&NameUse>) -> Vec<ImportedName> {
+    match name_use {
+        None => Vec::new(),
+        Some(name_use) if name_use.escapes => vec![ImportedName::All],
+        Some(name_use) => named(&name_use.members),
+    }
+}
+
+fn named<'a>(members: impl IntoIterator<Item = &'a String>) -> Vec<ImportedName> {
+    members
+        .into_iter()
+        .map(|member| ImportedName::Name(member.clone()))
+        .collect()
 }
 
 /// The name an export entry exports and where that name is written.
