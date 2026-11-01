@@ -1,0 +1,16 @@
+{
+  "name": "chained",
+  "main": "src/index.ts",
+  "scripts": {
+    "lint": "NODE_ENV=production DEBUG=1 eslint src && echo done || exit 1",
+    "test": "npx -y vitest run | tee out.txt; pnpm exec tsup",
+    "fmt": "bunx prettier --check ."
+  },
+  "devDependencies": {
+    "eslint": "^1.0.0",
+    "vitest": "^1.0.0",
+    "tsup": "^1.0.0",
+    "prettier": "^1.0.0",
+    "left-pad": "^1.0.0"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "unknown",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "mystery-tool build && tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "left-pad": "^1.0.0"
+  }
+}

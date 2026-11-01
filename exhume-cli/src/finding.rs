@@ -65,6 +65,9 @@ pub enum ReasonCode {
     CjsBoundary,
     /// A specifier names a file next to this one that doesn't exist, perhaps one exhume can't parse.
     UnresolvableSpecifier,
+    /// A script runs a binary that may belong to a Dependency that isn't installed, so which
+    /// Dependencies the scripts use is a guess.
+    BinGuess,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]

@@ -265,3 +265,9 @@ fn declared_dependencies_that_no_file_of_their_package_imports_are_unused() {
     let report = scan(&fixture("dependencies"));
     assert_expected("dependencies", &report);
 }
+
+#[test]
+fn dependencies_run_through_their_installed_binaries_in_scripts_are_used() {
+    let report = scan(&fixture("scripts"));
+    assert_expected("scripts", &report);
+}

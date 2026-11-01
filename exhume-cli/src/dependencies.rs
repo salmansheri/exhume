@@ -1,4 +1,4 @@
-//! Declared Dependencies that no file of their Workspace Package imports.
+//! Declared Dependencies that no file or script of their Workspace Package uses.
 
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -12,7 +12,7 @@ pub(crate) struct UnusedDependency {
     pub package: usize,
     pub dependency: Dependency,
     /// Package-wide blind spots in unreachable files, which the reachable files' blind spots
-    /// don't cover.
+    /// don't cover, and unknown script binaries that may be this Dependency's.
     pub reasons: Vec<Reason>,
 }
 
@@ -60,14 +60,30 @@ pub(crate) fn unused(
 
     let mut unused = Vec::new();
     for (index, package) in packages.iter().enumerate() {
+        let script_use = ecosystem.dependencies_run_by_scripts(package);
+        used[index].extend(script_use.dependencies);
+        // A binary no installed Dependency owns may be any uninstalled one's.
+        let bin_guesses: Vec<Reason> = script_use
+            .unknown_binaries
+            .iter()
+            .map(|run| Reason {
+                code: ReasonCode::BinGuess,
+                detail: Some(format!("{}: {}", run.script, run.binary)),
+            })
+            .collect();
         for dependency in ecosystem.dependencies(package) {
-            if !used[index].contains(&dependency.name) {
-                unused.push(UnusedDependency {
-                    package: index,
-                    dependency,
-                    reasons: reasons[index].clone(),
-                });
+            if used[index].contains(&dependency.name) {
+                continue;
             }
+            let mut dependency_reasons = reasons[index].clone();
+            if script_use.uninstalled.contains(&dependency.name) {
+                dependency_reasons.extend(bin_guesses.iter().cloned());
+            }
+            unused.push(UnusedDependency {
+                package: index,
+                dependency,
+                reasons: dependency_reasons,
+            });
         }
     }
     Ok(unused)

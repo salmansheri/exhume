@@ -1,15 +1,17 @@
+mod bins;
 mod manifest;
 mod parse;
 mod resolve;
+mod scripts;
 mod usage;
 mod workspace;
 
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::path::{Component, Path, PathBuf};
 
 use anyhow::Context;
 
-use super::{Dependency, Ecosystem, Module, Resolution, WorkspacePackage};
+use super::{Dependency, Ecosystem, Module, Resolution, ScriptBinary, ScriptUse, WorkspacePackage};
 use manifest::Manifest;
 
 const SOURCE_EXTENSIONS: &[&str] = &["js", "jsx", "mjs", "cjs", "ts", "tsx", "mts", "cts"];
@@ -61,6 +63,8 @@ const NODE_BUILTINS: &[&str] = &[
 ];
 
 pub struct JsEcosystem {
+    /// The workspace root, above which installed packages aren't looked for.
+    root: PathBuf,
     packages: Vec<WorkspacePackage>,
     /// Manifests by Workspace Package directory.
     manifests: HashMap<PathBuf, Manifest>,
@@ -80,6 +84,7 @@ impl JsEcosystem {
             packages.push(package);
         }
         Ok(JsEcosystem {
+            root: root.to_path_buf(),
             packages,
             manifests,
             by_name,
@@ -100,6 +105,18 @@ impl JsEcosystem {
                 .then(|| self.resolver.resolve_from_dir(dir, &format!(".{subpath}")))
                 .flatten()
         })
+    }
+
+    /// The manifest of the Dependency `name` as installed for `dir`, found the way Node finds it:
+    /// in the nearest `node_modules` up to the workspace root.
+    fn installed_manifest(&self, dir: &Path, name: &str) -> Option<Manifest> {
+        dir.ancestors()
+            .take_while(|ancestor| ancestor.starts_with(&self.root))
+            .find_map(|ancestor| {
+                Manifest::read_optional(&ancestor.join("node_modules").join(name))
+                    .ok()
+                    .flatten()
+            })
     }
 }
 
@@ -202,6 +219,58 @@ impl Ecosystem for JsEcosystem {
             vec![types]
         } else {
             vec![name.to_owned(), types]
+        }
+    }
+
+    fn dependencies_run_by_scripts(&self, package: &WorkspacePackage) -> ScriptUse {
+        let Some(manifest) = self.manifests.get(&package.dir) else {
+            return ScriptUse::default();
+        };
+        // Which declared Dependencies own each binary, from their installed manifests.
+        let mut owners: HashMap<String, Vec<String>> = HashMap::new();
+        let mut uninstalled = BTreeSet::new();
+        for (name, _) in manifest.dependencies() {
+            match self.installed_manifest(&package.dir, &name) {
+                Some(installed) => {
+                    for bin in installed.bin_names() {
+                        owners.entry(bin).or_default().push(name.clone());
+                    }
+                }
+                None => {
+                    uninstalled.insert(name);
+                }
+            }
+        }
+        let mut used = BTreeSet::new();
+        let mut unknown_binaries = Vec::new();
+        for (script, command) in manifest.scripts() {
+            for binary in scripts::binaries(command) {
+                if let Some(names) = owners.get(&binary) {
+                    used.extend(names.iter().cloned());
+                    continue;
+                }
+                // Only an uninstalled Dependency could own a binary no installed one does.
+                if uninstalled.is_empty() || bins::is_not_a_dependency(&binary) {
+                    continue;
+                }
+                match bins::guessed_owners(&binary) {
+                    Some(guessed) => used.extend(
+                        guessed
+                            .iter()
+                            .filter(|name| uninstalled.contains(**name))
+                            .map(|name| (*name).to_owned()),
+                    ),
+                    None => unknown_binaries.push(ScriptBinary {
+                        script: script.to_owned(),
+                        binary,
+                    }),
+                }
+            }
+        }
+        ScriptUse {
+            dependencies: used.into_iter().collect(),
+            unknown_binaries,
+            uninstalled: uninstalled.into_iter().collect(),
         }
     }
 }

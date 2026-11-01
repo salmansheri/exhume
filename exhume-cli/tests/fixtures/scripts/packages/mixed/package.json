@@ -1,0 +1,13 @@
+{
+  "name": "mixed",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "vitest run 2>&1 && npx -p typescript tsc && mystery-tool && pwd"
+  },
+  "devDependencies": {
+    "vitest": "^1.0.0",
+    "typescript": "^1.0.0",
+    "left-pad": "^1.0.0",
+    "never-installed": "^1.0.0"
+  }
+}

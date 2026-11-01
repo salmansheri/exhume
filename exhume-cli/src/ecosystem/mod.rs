@@ -40,6 +40,28 @@ pub trait Ecosystem {
     /// The names a Dependency would have if importing `specifier` used it: the package it
     /// names and that package's type definitions. Whether any is declared is not checked.
     fn dependencies_imported_by(&self, specifier: &str) -> Vec<String>;
+
+    /// The Dependencies whose binaries a Workspace Package's scripts run.
+    fn dependencies_run_by_scripts(&self, package: &WorkspacePackage) -> ScriptUse;
+}
+
+/// What a Workspace Package's scripts reveal about its Dependencies.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ScriptUse {
+    /// Dependencies whose binaries the scripts run.
+    pub dependencies: Vec<String>,
+    /// Binaries the scripts run that no installed Dependency owns, so each may belong to one
+    /// of `uninstalled`.
+    pub unknown_binaries: Vec<ScriptBinary>,
+    /// Declared Dependencies that aren't installed, whose binaries exhume can only guess.
+    pub uninstalled: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ScriptBinary {
+    /// The name of the script that runs it.
+    pub script: String,
+    pub binary: String,
 }
 
 /// A Dependency as its Workspace Package declares it.

@@ -27,6 +27,8 @@ pub struct Manifest {
     peer_dependencies: BTreeMap<String, Value>,
     #[serde(default, rename = "optionalDependencies")]
     optional_dependencies: BTreeMap<String, Value>,
+    #[serde(default)]
+    scripts: BTreeMap<String, Value>,
     /// The manifest's text, for locating what it declares.
     #[serde(skip)]
     raw: String,
@@ -97,6 +99,28 @@ impl Manifest {
             line: before.matches('\n').count() as u32 + 1,
             column: before[line_start..].chars().count() as u32 + 1,
         })
+    }
+
+    /// Each script's name and command.
+    pub fn scripts(&self) -> impl Iterator<Item = (&str, &str)> {
+        self.scripts
+            .iter()
+            .filter_map(|(name, command)| Some((name.as_str(), command.as_str()?)))
+    }
+
+    /// The names of the binaries the package installs. A `bin` path on its own is named after
+    /// the package, without its scope.
+    pub fn bin_names(&self) -> Vec<String> {
+        match &self.bin {
+            Some(Value::String(_)) => self
+                .name
+                .as_deref()
+                .map(|name| name.rsplit('/').next().unwrap_or(name).to_owned())
+                .into_iter()
+                .collect(),
+            Some(Value::Object(bins)) => bins.keys().cloned().collect(),
+            _ => Vec::new(),
+        }
     }
 
     /// Whether `exports` restricts which subpaths other packages may import.

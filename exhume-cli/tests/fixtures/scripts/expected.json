@@ -1,0 +1,6 @@
+[
+  {"kind": "unused-dependency", "package": "chained", "path": "packages/chained/package.json", "name": "left-pad", "line": 14, "column": 5, "confidence": "high", "reasons": []},
+  {"kind": "unused-dependency", "package": "installed", "path": "packages/installed/package.json", "name": "left-pad", "line": 9, "column": 5, "confidence": "high", "reasons": []},
+  {"kind": "unused-dependency", "package": "mixed", "path": "packages/mixed/package.json", "name": "left-pad", "line": 10, "column": 5, "confidence": "high", "reasons": []},
+  {"kind": "unused-dependency", "package": "mixed", "path": "packages/mixed/package.json", "name": "never-installed", "line": 11, "column": 5, "confidence": "medium", "reasons": ["bin-guess"]}
+]
